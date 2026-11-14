@@ -76,3 +76,12 @@ class ValidationStatus(str, Enum):
     SKIPPED = "skipped"
 
 
+class ValidationCheck(BaseModel):
+    name: str
+    status: ValidationStatus = ValidationStatus.PENDING
+    expected: object | None = None
+    observed: object | None = None
+    threshold: object | None = None
+    message: str | None = None
+
+
