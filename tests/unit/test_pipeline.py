@@ -145,3 +145,87 @@ class TestStageOps:
         assert "aggregate_daily_revenue" in names
 
 
+class TestRunner:
+    def _pipeline(self) -> Pipeline:
+        return Pipeline(
+            id="orders",
+            name="Orders",
+            version="1.0",
+            source="fixtures:orders.csv",
+            stages=[
+                PipelineStage(
+                    id="orders_clean",
+                    name="clean.orders",
+                    input_schema=_orders_schema(3),
+                    output_schema=_orders_schema(3),
+                    transformation="clean_orders",
+                    dependencies=[],
+                ),
+                PipelineStage(
+                    id="daily_revenue",
+                    name="daily_revenue",
+                    input_schema=_orders_schema(3),
+                    output_schema=SchemaDefinition(
+                        table="daily_revenue",
+                        version=1,
+                        columns=[
+                            ColumnDefinition(name="order_id", type=DataType.INTEGER),
+                            ColumnDefinition(name="currency", type=DataType.VARCHAR),
+                            ColumnDefinition(name="revenue", type=DataType.DOUBLE),
+                        ],
+                    ),
+                    transformation="aggregate_daily_revenue",
+                    dependencies=["orders_clean"],
+                ),
+            ],
+        )
+
+    @pytest.mark.asyncio
+    async def test_run_success_and_warehouse_write(self):
+        wh = MemoryWarehouse()
+        df = pl.DataFrame(
+            {
+                "order_id": [1, 1, 2, 3],
+                "amount": [10.0, 20.0, 30.0, 40.0],
+                "currency": ["USD", "USD", "EUR", "GBP"],
+            }
+        )
+        res = await run_pipeline(self._pipeline(), df, wh, namespace="shadow")
+        assert res.ok is True
+        assert [s.ok for s in res.stages] == [True, True]
+        assert (await wh.list_versions("daily_revenue")) == ["shadow:v1.0"]
+
+    @pytest.mark.asyncio
+    async def test_run_persist_false_no_write(self):
+        wh = MemoryWarehouse()
+        df = pl.DataFrame(
+            {"order_id": [1], "amount": [1.0], "currency": ["USD"]}
+        )
+        res = await run_pipeline(
+            self._pipeline(), df, wh, namespace="shadow", persist=False
+        )
+        assert res.ok is True
+        assert (await wh.list_versions("daily_revenue")) == []
+
+    @pytest.mark.asyncio
+    async def test_unknown_transform_errors(self):
+        p = Pipeline(
+            id="bad",
+            name="Bad",
+            version="1.0",
+            source="x",
+            stages=[
+                PipelineStage(
+                    id="s1",
+                    name="x",
+                    input_schema=_orders_schema(),
+                    output_schema=_orders_schema(),
+                    transformation="does_not_exist",
+                )
+            ],
+        )
+        res = await run_pipeline(p, pl.DataFrame({}), None)
+        assert res.ok is False
+        assert res.failed_stages()[0].stage_id == "s1"
+
+
