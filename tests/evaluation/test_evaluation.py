@@ -33,3 +33,12 @@ async def test_every_scenario_matches_expected_outcome():
     assert mismatched == [], f"scenarios deviated from expected outcome: {mismatched}"
 
 
+@pytest.mark.asyncio
+async def test_data_loss_rate_is_zero():
+    results = await run_all(benchmark_scenarios() + adversarial_scenarios())
+    m = compute_metrics(results)
+    assert m.data_loss_rate == 0.0
+    assert m.false_repair_rate == 0.0
+    assert m.unnecessary_change_rate == 0.0
+
+
