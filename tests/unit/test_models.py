@@ -150,3 +150,14 @@ class TestValidationReport:
         assert len(r.failed) == 1
 
 
+class TestAgentState:
+    def test_defaults(self):
+        s = PipelineTriageState(run_id="run1", pipeline_id="orders")
+        assert s.phase == Phase.OBSERVE
+
+    def test_bump_phase(self):
+        s = PipelineTriageState(run_id="r", pipeline_id="orders")
+        s.bump_phase(Phase.DETECT)
+        assert s.phase == Phase.DETECT
+        s.bump_phase(Phase.ROLLBACK)
+        assert s.phase == Phase.ROLLBACK
