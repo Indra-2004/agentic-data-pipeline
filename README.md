@@ -56,3 +56,12 @@ docker compose up --build
 
 API docs: http://localhost:8000/docs
 
+## API
+
+| Method | Endpoint | What it does |
+|---|---|---|
+| GET | `/health` | Health check |
+| GET | `/pipelines` | List pipelines |
+| POST | `/pipelines/{id}/triage` | Run the agent on a pipeline |
+| GET | `/runs/{run_id}` | View a past run |
+
