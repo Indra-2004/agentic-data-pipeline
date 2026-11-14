@@ -10,3 +10,10 @@ from __future__ import annotations
 from dataclasses import dataclass, field
 
 
+@dataclass
+class LineageEdge:
+    source: str
+    destination: str
+    columns: list[str] = field(default_factory=list)
+
+
