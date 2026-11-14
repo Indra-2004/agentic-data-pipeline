@@ -93,3 +93,35 @@ class TestTypeDriftPromotion:
         assert state.proposed_fix.operations[0].operation == FixOperationType.CAST_TYPE
 
 
+class TestGuardrails:
+    @pytest.mark.asyncio
+    async def test_resource_budget_safe_stop(self):
+        ctx = _ctx()
+        orch = Orchestrator(
+            ctx=ctx,
+            llm=DeterministicLLM(),
+            config=TriageConfig(max_budget_rows=10),
+        )
+        state = await orch.run("orders", _drifted_df(n=100))
+        assert state.phase == Phase.SAFE_STOP
+        assert "budget" in (state.error or "")
+
+    @pytest.mark.asyncio
+    async def test_canary_failure_triggers_rollback(self, monkeypatch):
+        from app.agent.policies import ActionClass
+        from app.tools.base import tool
+        from app.tools.deployment_tools import DeploymentTools
+
+        @tool("run_canary", ActionClass.PRODUCTION_WRITE, "force-fail canary")
+        async def broken_canary(self, pipeline_id, operations=None):
+            return {"status": "CANARY_FAILED", "passed": False, "failure_rate": 1.0}
+
+        monkeypatch.setattr(DeploymentTools, "run_canary", broken_canary)
+
+        ctx = _ctx()
+        orch = Orchestrator(ctx=ctx, llm=DeterministicLLM(), config=TriageConfig())
+        state = await orch.run("orders", _drifted_df())
+        assert state.deployment_status == DeploymentStatus.ROLLED_BACK
+        assert state.rollback_status is not None
+
+
