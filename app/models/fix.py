@@ -54,3 +54,18 @@ class FixOperation(BaseModel):
     on_error: OnError = OnError.REJECT
 
 
+class FixProposal(BaseModel):
+    """Structured proposal produced by the agent (never raw SQL)."""
+
+    root_cause: str
+    evidence: list[str] = Field(default_factory=list)
+    operations: list[FixOperation] = Field(default_factory=list)
+    affected_stages: list[str] = Field(default_factory=list)
+    affected_columns: list[str] = Field(default_factory=list)
+    expected_impact: str | None = None
+    risk: RiskLevel = RiskLevel.LOW
+    confidence: float = 0.0
+    validation_plan: list[str] = Field(default_factory=list)
+    rollback_strategy: str | None = None
+
+
