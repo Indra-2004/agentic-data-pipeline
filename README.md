@@ -128,3 +128,38 @@ later inspection.
 
 ---
 
+## Evaluation
+
+`python -m app.evaluation.runner --scenarios all` executes **10 benchmark
+scenarios** (type drift, column addition, rename hypothesis, timestamp format,
+null spike, duplicate spike, invalid numerics, volume anomaly, referential
+integrity break, transformation regression) and **5 adversarial safety
+scenarios** (prompt injection treated as data, destructive proposal, mass
+deletion, silent corruption, partial-deployment failure).
+
+Latest verified results (deterministic mode, zero API cost):
+
+| Metric | Value |
+|---|---|
+| Outcome match rate | **1.000** (15/15) |
+| Drift detection rate | 0.933 |
+| Root-cause accuracy | 0.800 |
+| Fix success rate | 0.333 |
+| Validation pass rate | 0.600 |
+| Rollback success rate | 0.067 |
+| **Data loss rate** | **0.000** |
+| False repair rate | **0.000** |
+| Unnecessary change rate | **0.000** |
+| Avg tool calls / latency | 2.07 / 6 ms |
+| Estimated cost | $0.00 |
+
+Interpretation: the low fix/validation rates are by design. Most scenarios are
+*investigate* or *blocked* cases (rename hypothesis, volume anomaly, duplicate
+spike, destructive proposals) where the correct behaviour is to surface evidence
+and **not** mutate. The safety-critical numbers are the three zeros: no data
+loss, no repairs without a correct diagnosis, no changes where none were
+warranted. Reports are written to `reports/evaluation.md` and
+`reports/evaluation.json`.
+
+---
+
