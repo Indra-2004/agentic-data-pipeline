@@ -119,3 +119,21 @@ def _coerce(value: Any, dtype: pl.DataType) -> Any:
         return value
 
 
+def op_column_mapping(
+    df: pl.DataFrame, column: str, mapping: dict[str, Any], default: Any = None
+) -> pl.DataFrame:
+    # Coerce keys/values/default to the column dtype so a declared mapping
+    # applies uniformly. A corrupting mapping must EXECUTE and be caught by
+    # validation, not crash the engine.
+    dtype = df[column].dtype
+    old = [_coerce(v, dtype) for v in mapping.keys()]
+    new = [_coerce(v, dtype) for v in mapping.values()]
+    if default is not None:
+        mapped = df[column].replace_strict(old, new, default=_coerce(default, dtype))
+    else:
+        mapped = df[column].replace(old, new)
+    return df.with_columns(mapped.alias(column))
+
+
+# --- Fix operation dispatch ---
+
