@@ -22,3 +22,10 @@ from app.storage import BackendStore, MemoryMetadataStore, MemoryWarehouse
 from app.tools.context import ToolContext
 
 
+def _sch(v: int, types) -> SchemaDefinition:
+    return SchemaDefinition(
+        table="orders", version=v,
+        columns=[ColumnDefinition(name=n, type=t) for n, t in types],
+    )
+
+
