@@ -49,3 +49,16 @@ def gen_orders(rng: random.Random, n: int = 600) -> pl.DataFrame:
     )
 
 
+def main() -> None:
+    rng = random.Random(42)
+    out = Path(__file__).parent
+    customers = gen_customers(rng)
+    orders = gen_orders(rng)
+    customers.write_csv(out / "customers.csv")
+    orders.write_csv(out / "orders.csv")
+    print(f"wrote {out / 'customers.csv'} ({customers.height} rows)")
+    print(f"wrote {out / 'orders.csv'} ({orders.height} rows)")
+
+
+if __name__ == "__main__":
+    main()
