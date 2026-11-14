@@ -135,3 +135,17 @@ over making an unsafe change.
 
 ---
 
+## 🛡️ Safety model
+
+| Layer | Mechanism |
+|---|---|
+| **Policy engine** | Every tool carries an action class (`READ_ONLY`, `SHADOW_WRITE`, `STAGING_WRITE`, `PRODUCTION_WRITE`, `ROLLBACK`). Tools are gated per phase; the LLM never decides permissions. |
+| **Constrained fixes** | The LLM can only emit declarative operations. Arbitrary SQL and shell are impossible by construction; unknown operations are dropped. |
+| **Risk-based approval** | `LOW` (safe coercion) auto-stages · `MEDIUM` (rename, dedup) requires explicit approval · `HIGH` (row deletion) is rejected without a gate. |
+| **Shadow validation** | Candidates must match the expected output schema, preserve rows, and keep business metrics within 5% of the input baseline (including aggregated aliases like `revenue <- amount`). |
+| **Canary** | 95% current / 5% candidate partition; candidate failure or quality violation ⇒ `CANARY_FAILED`. |
+| **Rollback** | Versioned warehouse snapshots; restore is deterministic and idempotent, with an audited reason. |
+| **Prompt-injection resistance** | Instructions found inside the data are treated as data, never as commands (covered by an adversarial scenario). |
+
+---
+
