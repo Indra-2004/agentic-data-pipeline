@@ -229,3 +229,16 @@ class TestRunner:
         assert res.failed_stages()[0].stage_id == "s1"
 
 
+class TestRegistry:
+    def test_register_and_override(self, tmp_path):
+        reg = PipelineRegistry(tmp_path)
+        p = Pipeline(id="a", name="A", version="1.0", source="x", stages=[])
+        reg.register(p)
+        assert reg.get("a") == p
+        assert len(reg) == 1
+
+    def test_load_from_disk(self, tmp_path):
+        p = Pipeline(id="disk", name="Disk", version="1.0", source="x", stages=[])
+        (tmp_path / "disk.json").write_text(json.dumps(p.model_dump()))
+        reg = PipelineRegistry(tmp_path)
+        assert reg.get("disk").id == "disk"
