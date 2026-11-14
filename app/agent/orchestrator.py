@@ -73,3 +73,17 @@ class TriageConfig:
         self.force_canary_fail = force_canary_fail
 
 
+def auto_approve(risk: RiskLevel, proposal: FixProposal | None = None) -> ApprovalStatus:
+    """Default approval resolver.
+
+    - LOW    -> auto-approved (safe type coercion / non-breaking add)
+    - HIGH   -> rejected without an explicit gate (never auto-deploy destructive)
+    - MEDIUM -> pending (an external harness/human must approve)
+    """
+    if risk == RiskLevel.LOW:
+        return ApprovalStatus.AUTO_APPROVED
+    if risk == RiskLevel.HIGH:
+        return ApprovalStatus.REJECTED
+    return ApprovalStatus.PENDING
+
+
