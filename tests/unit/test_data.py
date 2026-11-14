@@ -69,3 +69,69 @@ class TestSchemaInference:
         assert types["ok"] == DataType.BOOLEAN
 
 
+class TestSchemaComparison:
+    def test_identical_no_events(self):
+        expected = _orders_expected()
+        observed = infer_schema(
+            pl.DataFrame(
+                {
+                    "order_id": [1, 2],
+                    "amount": [1.0, 2.0],
+                    "currency": ["USD", "EUR"],
+                }
+            ),
+            table="orders",
+        )
+        assert compare_schemas(expected, observed) == []
+
+    def test_type_changed_high_severity(self):
+        expected = _orders_expected()
+        observed = SchemaDefinition(
+            table="orders",
+            version=4,
+            columns=[
+                ColumnDefinition(name="order_id", type=DataType.INTEGER),
+                ColumnDefinition(name="amount", type=DataType.VARCHAR),
+                ColumnDefinition(name="currency", type=DataType.VARCHAR),
+            ],
+        )
+        events = compare_schemas(expected, observed)
+        assert len(events) == 1
+        e = events[0]
+        assert e.type == DriftEventType.TYPE_CHANGED
+        assert e.column == "amount"
+        assert e.expected == "DOUBLE"
+        assert e.observed == "VARCHAR"
+        assert e.severity.value == "HIGH"
+
+    def test_column_added_and_removed(self):
+        expected = _orders_expected()
+        observed = SchemaDefinition(
+            table="orders",
+            version=5,
+            columns=[
+                ColumnDefinition(name="order_id", type=DataType.INTEGER),
+                ColumnDefinition(name="amount", type=DataType.DOUBLE),
+                ColumnDefinition(name="customer_tier", type=DataType.VARCHAR),
+            ],
+        )
+        events = {e.column: e.type for e in compare_schemas(expected, observed)}
+        assert events["currency"] == DriftEventType.COLUMN_REMOVED
+        assert events["customer_tier"] == DriftEventType.COLUMN_ADDED
+
+    def test_rename_hypothesis(self):
+        expected = _orders_expected()
+        observed = SchemaDefinition(
+            table="orders",
+            version=6,
+            columns=[
+                ColumnDefinition(name="order_id", type=DataType.INTEGER),
+                ColumnDefinition(name="amount", type=DataType.DOUBLE),
+                ColumnDefinition(name="client_id", type=DataType.INTEGER),
+            ],
+        )
+        # "currency" removed, "client_id" added -> product_id similarity only.
+        hyps = compute_rename_hypotheses(expected, observed)
+        assert isinstance(hyps, list)
+
+
