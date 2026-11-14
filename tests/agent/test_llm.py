@@ -70,3 +70,55 @@ class TestDeterministicLLM:
         assert proposal is None
 
 
+class TestOpenAIProviderMocked:
+    @pytest.mark.asyncio
+    async def test_parses_structured_proposal(self, monkeypatch):
+        # Bypass __init__ to avoid real client construction, then inject a mock.
+        prov = object.__new__(OpenAIProvider)
+        prov._model = "gpt-test"
+        client = MagicMock()
+        message = MagicMock()
+        message.content = (
+            '{"root_cause": "type drift", "operations": '
+            '[{"operation": "cast_type", "column": "amount", "to_type": "DOUBLE", '
+            '"on_error": "null"}], "risk": "LOW", "confidence": 0.9}'
+        )
+        resp = MagicMock()
+        resp.choices = [MagicMock(message=message)]
+        client.chat.completions.create = AsyncMock(return_value=resp)
+        prov._client = client
+
+        proposal = await prov.build_proposal(
+            drift_events=[_type_drift()],
+            quality_anomalies=[],
+            hypotheses=[],
+            pipeline_context={},
+        )
+        assert proposal is not None
+        assert proposal.operations[0].to_type == "DOUBLE"
+        assert proposal.risk == RiskLevel.LOW
+
+    @pytest.mark.asyncio
+    async def test_drops_unknown_operation(self, monkeypatch):
+        prov = object.__new__(OpenAIProvider)
+        prov._model = "gpt-test"
+        client = MagicMock()
+        message = MagicMock()
+        message.content = (
+            '{"root_cause": "x", "operations": '
+            '[{"operation": "DROP TABLE orders"}, {"operation": "cast_type", '
+            '"column": "a", "to_type": "DOUBLE"}]}'
+        )
+        resp = MagicMock()
+        resp.choices = [MagicMock(message=message)]
+        client.chat.completions.create = AsyncMock(return_value=resp)
+        prov._client = client
+
+        proposal = await prov.build_proposal(
+            drift_events=[], quality_anomalies=[], hypotheses=[], pipeline_context={}
+        )
+        assert proposal is not None
+        # Unknown "DROP TABLE" operation is dropped, cast kept.
+        assert all(o.operation == FixOperationType.CAST_TYPE for o in proposal.operations)
+
+
