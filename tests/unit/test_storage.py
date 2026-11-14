@@ -153,3 +153,30 @@ class TestMetadataStore:
         assert recs[0]["restored"] == "v3"
 
 
+class TestWarehouse:
+    @pytest.mark.parametrize("factory", WAREHOUSE_BACKENDS)
+    @pytest.mark.asyncio
+    async def test_versioned_roundtrip(self, factory):
+        wh = factory()
+        df = _sample_df()
+        await wh.write_table("orders", "v3", df)
+        await wh.write_table("orders", "v4", df.with_columns(pl.lit(1).alias("x")))
+        restored = await wh.read_table("orders", "v3")
+        assert restored is not None
+        assert restored.height == 4
+        assert "amount" in restored.columns
+        assert await wh.list_versions("orders") == ["v3", "v4"]
+        assert await wh.read_table("orders", "nope") is None
+
+    @pytest.mark.parametrize("factory", WAREHOUSE_BACKENDS)
+    @pytest.mark.asyncio
+    async def test_drop_version_and_table(self, factory):
+        wh = factory()
+        await wh.write_table("t", "v1", _sample_df())
+        await wh.write_table("t", "v2", _sample_df())
+        await wh.drop_version("t", "v1")
+        assert await wh.list_versions("t") == ["v2"]
+        await wh.drop_table("t")
+        assert await wh.list_versions("t") == []
+
+
