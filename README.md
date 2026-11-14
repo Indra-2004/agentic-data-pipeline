@@ -14,3 +14,15 @@ out. If anything goes wrong, it rolls back automatically.
 
 **It never changes real data without checking first.**
 
+## How it works
+
+1. **Detect** – compare the data with the expected schema and run quality checks.
+2. **Diagnose** – find the cause and which downstream tables are affected.
+3. **Propose** – suggest a simple, predefined fix (e.g. `cast_type(amount, DOUBLE)`).
+4. **Validate** – run the fix on a shadow copy and check rows, nulls and totals.
+5. **Approve** – a policy engine decides if the fix is safe enough to apply.
+6. **Deploy** – release to 5% of the data first (canary).
+7. **Monitor & roll back** – if health checks fail, restore the previous version.
+
+If a step fails or a limit is hit, the agent stops without changing anything.
+
