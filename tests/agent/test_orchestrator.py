@@ -48,3 +48,12 @@ def _pipeline() -> Pipeline:
     )
 
 
+def _ctx() -> ToolContext:
+    store = BackendStore(MemoryMetadataStore(), MemoryWarehouse())
+    lineage = LineageGraph([
+        LineageEdge("orders", "clean.orders", ["order_id", "amount", "currency"]),
+        LineageEdge("clean.orders", "daily_revenue", ["amount"]),
+    ])
+    return ToolContext(store=store, pipelines={"orders": _pipeline()}, lineage=lineage)
+
+
