@@ -65,3 +65,91 @@ def _sample_df() -> pl.DataFrame:
     )
 
 
+METADATA_BACKENDS = [
+    pytest.param(MemoryMetadataStore, id="memory"),
+    pytest.param(
+        lambda: SQLiteMetadataStore(":memory:", create=True), id="sqlite"
+    ),
+]
+
+WAREHOUSE_BACKENDS = [
+    pytest.param(MemoryWarehouse, id="memory"),
+    pytest.param(
+        lambda: SQLiteWarehouse(":memory:", create=True), id="sqlite"
+    ),
+]
+
+
+class TestMetadataStore:
+    @pytest.mark.parametrize("factory", METADATA_BACKENDS)
+    @pytest.mark.asyncio
+    async def test_state_roundtrip(self, factory):
+        store = factory()
+        st = PipelineTriageState(run_id="run1", pipeline_id="orders")
+        st.phase = Phase.DIAGNOSE
+        await store.save_state(st)
+        loaded = await store.load_state("run1")
+        assert loaded is not None
+        assert loaded.run_id == "run1"
+        assert loaded.phase == Phase.DIAGNOSE
+
+        assert await store.load_state("nope") is None
+
+    @pytest.mark.parametrize("factory", METADATA_BACKENDS)
+    @pytest.mark.asyncio
+    async def test_pipeline_crud(self, factory):
+        store = factory()
+        p = _orders_pipeline()
+        await store.save_pipeline(p)
+        assert await store.get_pipeline("orders") == p
+        assert [x.id for x in await store.list_pipelines()] == ["orders"]
+
+    @pytest.mark.parametrize("factory", METADATA_BACKENDS)
+    @pytest.mark.asyncio
+    async def test_schema_registry_versions(self, factory):
+        store = factory()
+        await store.save_schema(_orders_schema(version=1))
+        await store.save_schema(_orders_schema(version=2))
+        await store.save_schema(_orders_schema(version=3))
+        assert await store.list_schema_versions("orders") == [1, 2, 3]
+        got = await store.get_schema("orders", 2)
+        assert got is not None and got.version == 2
+
+    @pytest.mark.parametrize("factory", METADATA_BACKENDS)
+    @pytest.mark.asyncio
+    async def test_run_and_metrics_and_lineage(self, factory):
+        store = factory()
+        drift = DriftEvent(
+            type=DriftEventType.TYPE_CHANGED,
+            column="amount",
+            expected="DOUBLE",
+            observed="VARCHAR",
+            severity=Severity.HIGH,
+        )
+        await store.record_run("r1", "orders", "failed", detected_issues=[drift])
+        run = await store.get_run("r1")
+        assert run["pipeline_id"] == "orders"
+
+        await store.record_metrics("orders", "t1", {"row_count": 100, "null_rate": 0.02})
+        await store.record_metrics("orders", "t2", {"row_count": 90, "null_rate": 0.03})
+        hist = await store.get_metric_history("orders")
+        assert len(hist) == 2
+        assert hist[0]["row_count"] == 100
+
+        await store.save_lineage_edge("raw.orders", "clean.orders", ["amount"])
+        downstream = await store.get_downstream("raw.orders")
+        assert downstream[0]["destination"] == "clean.orders"
+        assert downstream[0]["columns"] == ["amount"]
+
+    @pytest.mark.parametrize("factory", METADATA_BACKENDS)
+    @pytest.mark.asyncio
+    async def test_rollback_records(self, factory):
+        store = factory()
+        await store.record_rollback(
+            {"run_id": "r1", "reason": "canary failed", "prev": "v3", "restored": "v3"}
+        )
+        recs = await store.get_rollback_records(run_id="r1")
+        assert len(recs) == 1
+        assert recs[0]["restored"] == "v3"
+
+
