@@ -17,3 +17,10 @@ from app.models import DataType, FixOperation, FixOperationType, OnError
 from app.pipeline.schemas import logical_to_polars
 
 
+class TransformationError(Exception):
+    """Raised when a transformation cannot be applied safely."""
+
+
+# --- Primitive operations (used by fix proposals) ---
+
+
