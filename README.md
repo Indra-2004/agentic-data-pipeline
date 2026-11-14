@@ -429,3 +429,6 @@ agentic-data-pipeline/
 
 If you find this project useful, consider giving it a ⭐!
 
+## 📄 License
+
+Released under the [MIT License](https://opensource.org/licenses/MIT).
