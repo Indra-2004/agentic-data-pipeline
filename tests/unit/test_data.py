@@ -184,3 +184,34 @@ class TestAnomaly:
         assert not any(a.metric == "row_count" for a in anomalies)
 
 
+class TestLineage:
+    def test_downstream(self):
+        g = LineageGraph(
+            [
+                LineageEdge("raw.orders", "clean.orders", ["amount"]),
+                LineageEdge("clean.orders", "daily_revenue", ["amount"]),
+                LineageEdge("raw.customers", "clean.customers", ["id"]),
+            ]
+        )
+        assert g.downstream("raw.orders") == ["clean.orders", "daily_revenue"]
+        assert g.nodes == [
+            "clean.customers",
+            "clean.orders",
+            "daily_revenue",
+            "raw.customers",
+            "raw.orders",
+        ]
+
+    def test_blast_radius_column_specific(self):
+        g = LineageGraph(
+            [
+                LineageEdge("raw.orders", "clean.orders", ["amount", "currency"]),
+                LineageEdge("clean.orders", "daily_revenue", ["amount"]),
+            ]
+        )
+        radius = g.blast_radius(["amount"])
+        assert "clean.orders" in radius
+        assert "daily_revenue" in radius
+        # A change to currency does NOT reach daily_revenue (not carried there)
+        radius2 = g.blast_radius(["currency"])
+        assert "daily_revenue" not in radius2
