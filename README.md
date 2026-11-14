@@ -294,3 +294,23 @@ loss rate is zero, so it can be used as a CI gate. Reports are written to
 
 ---
 
+## 🧪 Testing
+
+The project ships with **135 tests** across five suites:
+
+| Suite | Focus |
+|---|---|
+| `tests/unit` | Models, storage backends, profiling, quality, anomaly, lineage, pipeline stages, tools, observability |
+| `tests/integration` | End-to-end runs on the fixture pipeline and the FastAPI endpoints |
+| `tests/agent` | Orchestrator state machine, policy engine and LLM providers (OpenAI mocked) |
+| `tests/safety` | Unsafe fixes never deploy, blocked fixes leave the warehouse untouched, rollback restores, budgets enforced |
+| `tests/evaluation` | Every scenario matches its expected outcome with zero data loss |
+
+```bash
+pytest                       # everything
+pytest tests/safety          # one suite
+pytest --cov=app             # with coverage (fails under 70%)
+```
+
+---
+
