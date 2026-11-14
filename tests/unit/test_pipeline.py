@@ -29,3 +29,15 @@ from app.pipeline.stages import (
 from app.storage import MemoryWarehouse
 
 
+def _orders_schema(v: int = 3, amount: DataType = DataType.DOUBLE) -> SchemaDefinition:
+    return SchemaDefinition(
+        table="orders",
+        version=v,
+        columns=[
+            ColumnDefinition(name="order_id", type=DataType.INTEGER),
+            ColumnDefinition(name="amount", type=amount),
+            ColumnDefinition(name="currency", type=DataType.VARCHAR),
+        ],
+    )
+
+
