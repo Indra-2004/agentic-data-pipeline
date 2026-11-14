@@ -71,3 +71,14 @@ def op_normalize_string(
     return df.with_columns(expr.alias(column))
 
 
+def op_parse_timestamp(df: pl.DataFrame, column: str, fmt: str | None = None) -> pl.DataFrame:
+    try:
+        if fmt:
+            parsed = df[column].str.strptime(pl.Datetime, fmt)
+        else:
+            parsed = df[column].str.to_datetime()
+    except Exception as exc:
+        raise TransformationError(f"Cannot parse {column} as timestamp: {exc}") from exc
+    return df.with_columns(parsed.alias(column))
+
+
