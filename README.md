@@ -413,3 +413,13 @@ agentic-data-pipeline/
 
 ---
 
+## 🗺️ Roadmap
+
+- [ ] DuckDB and Postgres storage adapters
+- [ ] Airflow / Dagster integration as an adapter layer
+- [ ] Web dashboard for triage runs and rollback history
+- [ ] Slack / email notifications for approvals and rollbacks
+- [ ] GitHub Actions workflow running tests and the evaluation gate
+
+---
+
