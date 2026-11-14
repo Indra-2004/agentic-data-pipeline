@@ -180,3 +180,43 @@ class TestWarehouse:
         assert await wh.list_versions("t") == []
 
 
+class TestBackendFactory:
+    @pytest.mark.asyncio
+    async def test_factory_memory(self):
+        store = create_store("memory")
+        st = PipelineTriageState(run_id="r", pipeline_id="orders")
+        await store.metadata.save_state(st)
+        assert (await store.metadata.load_state("r")) is not None
+        await store.warehouse.write_table("o", "v1", _sample_df())
+        assert (await store.warehouse.read_table("o", "v1")).height == 4
+
+    @pytest.mark.asyncio
+    async def test_factory_sqlite(self, tmp_path):
+        db = tmp_path / "p.db"
+        store = create_store("sqlite", str(db))
+        await store.metadata.save_state(
+            PipelineTriageState(run_id="r", pipeline_id="orders")
+        )
+        assert (await store.metadata.load_state("r")) is not None
+        await store.warehouse.write_table("o", "v1", _sample_df())
+        assert (await store.warehouse.read_table("o", "v1")).height == 4
+
+    def test_factory_unknown(self):
+        with pytest.raises(ValueError):
+            create_store("postgres")
+
+    @pytest.mark.asyncio
+    async def test_store_from_settings(self, tmp_path):
+        from app.config import Settings, StorageBackend
+        from app.storage import store_from_settings
+
+        s = Settings(
+            _env_file=None,
+            storage_backend=StorageBackend.MEMORY,
+            db_path=tmp_path / "ignored.db",
+        )
+        store = store_from_settings(s)
+        await store.metadata.save_state(
+            PipelineTriageState(run_id="x", pipeline_id="orders")
+        )
+        assert (await store.metadata.load_state("x")) is not None
