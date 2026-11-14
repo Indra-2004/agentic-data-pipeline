@@ -130,3 +130,27 @@ class TestShadowValidationConstraints:
         assert any(c.name == "unique.order_id" for c in report.failed)
 
 
+class TestRollbackIdempotency:
+    @pytest.mark.asyncio
+    async def test_rollback_restores_previous_version(self):
+        store = BackendStore(MemoryMetadataStore(), MemoryWarehouse())
+        await store.warehouse.write_table("t", "main:v1", pl.DataFrame({"a": [1, 2, 3]}))
+        await store.warehouse.write_table("t", "main:v2", pl.DataFrame({"a": [9, 9]}))
+
+        rm = RollbackManager(store.warehouse, store.metadata)
+        rm.set_active("t", "v1")
+        rm.set_active("t", "v2")
+
+        report = await rm.rollback("run1", "t", reason="canary failed")
+        assert report.rolled_back is True
+        assert report.previous_version == "v2"
+        assert report.restored_version == "v1"
+        restored = await store.warehouse.read_table("t", "main:v1")
+        assert restored is not None and restored.height == 3
+        # Rollback is idempotent: second call is a no-op.
+        report2 = await rm.rollback("run1", "t", reason="again")
+        assert report2.rolled_back is False
+        # Audit record persisted.
+        recs = await store.metadata.get_rollback_records(run_id="run1")
+        assert len(recs) == 1
+        assert recs[0]["restored_version"] == "v1"
