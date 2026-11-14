@@ -59,3 +59,16 @@ def _fresh_ctx(env: EvalEnvironment):
     return ctx, pipeline
 
 
+def _classify_outcome(state) -> str:
+    if state.deployment_status == DeploymentStatus.ACTIVE:
+        return ExpectedOutcome.FIXED.value
+    if state.deployment_status == DeploymentStatus.ROLLED_BACK:
+        return ExpectedOutcome.ROLLED_BACK.value
+    result = (state.final_result or "").lower()
+    if "rejected by policy" in result:
+        return ExpectedOutcome.POLICY_REJECTED.value
+    if "validation blocked" in result:
+        return ExpectedOutcome.VALIDATION_BLOCKED.value
+    return ExpectedOutcome.NO_ACTION.value
+
+
