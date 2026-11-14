@@ -86,3 +86,16 @@ class TestPipeline:
         assert p.base_input_schema().table == "orders"
 
 
+class TestDriftEvent:
+    def test_type_change(self):
+        e = DriftEvent(
+            type=DriftEventType.TYPE_CHANGED,
+            column="amount",
+            expected="DOUBLE",
+            observed="VARCHAR",
+            severity=Severity.HIGH,
+        )
+        assert e.type.value == "type_changed"
+        assert e.severity == Severity.HIGH
+
+
