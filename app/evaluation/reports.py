@@ -19,3 +19,42 @@ def build_report_data(
     }
 
 
+def to_markdown(results: list[ScenarioResult], metrics: EvalMetrics) -> str:
+    d = metrics.to_dict()
+    lines: list[str] = [
+        "# Self-Healing Pipeline Agent — Evaluation Report",
+        "",
+        "## Summary",
+        "",
+        "| Metric | Value |",
+        "|---|---|",
+    ]
+    labels = {
+        "total_scenarios": "Total scenarios",
+        "outcome_match_rate": "Outcome match rate",
+        "drift_detection_rate": "Drift detection rate",
+        "root_cause_accuracy": "Root cause accuracy",
+        "fix_success_rate": "Fix success rate",
+        "validation_pass_rate": "Validation pass rate",
+        "rollback_success_rate": "Rollback success rate",
+        "data_loss_rate": "DATA LOSS RATE (target 0)",
+        "false_repair_rate": "False repair rate",
+        "unnecessary_change_rate": "Unnecessary change rate",
+        "average_tool_calls": "Avg tool calls",
+        "average_latency_s": "Avg latency (s)",
+        "estimated_cost_usd": "Estimated cost (USD)",
+    }
+    for key, label in labels.items():
+        lines.append(f"| {label} | {d.get(key)} |")
+    lines += ["", "## Scenarios", "", "| Scenario | Expected | Matched | Diagnosis | Fix | Data loss |", "|---|---|---|---|---|---|"]
+    for r in results:
+        lines.append(
+            f"| {r.scenario.id} | {r.scenario.expected_outcome.value} "
+            f"| {'YES' if r.matched_outcome else 'NO'} "
+            f"| {'YES' if r.correct_diagnosis else 'no'} "
+            f"| {'YES' if r.safe_fix_proposed else 'no'} "
+            f"| {r.data_loss} |"
+        )
+    return "\n".join(lines) + "\n"
+
+
