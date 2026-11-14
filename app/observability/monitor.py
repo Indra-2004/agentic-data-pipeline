@@ -17,3 +17,12 @@ from typing import Any
 from app.data.anomaly import detect_anomalies
 
 
+@dataclass
+class HealthCheck:
+    name: str
+    passed: bool
+    observed: Any = None
+    threshold: Any = None
+    message: str | None = None
+
+
