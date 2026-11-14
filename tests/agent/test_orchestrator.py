@@ -29,3 +29,22 @@ def _sch(v: int, types) -> SchemaDefinition:
     )
 
 
+def _pipeline() -> Pipeline:
+    exp = _sch(3, [("order_id", DataType.INTEGER), ("amount", DataType.DOUBLE), ("currency", DataType.VARCHAR)])
+    return Pipeline(
+        id="orders", name="Orders", version="1.0", source="x",
+        stages=[
+            PipelineStage(id="orders_clean", name="clean.orders",
+                          input_schema=exp, output_schema=exp,
+                          transformation="clean_orders", dependencies=[]),
+            PipelineStage(id="daily_revenue", name="daily_revenue",
+                          input_schema=exp,
+                          output_schema=_sch(1, [("order_id", DataType.INTEGER),
+                                                  ("currency", DataType.VARCHAR),
+                                                  ("revenue", DataType.DOUBLE)]),
+                          transformation="aggregate_daily_revenue",
+                          dependencies=["orders_clean"]),
+        ],
+    )
+
+
