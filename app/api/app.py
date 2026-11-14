@@ -180,3 +180,10 @@ def _to_summary(state: PipelineTriageState) -> TriageSummary:
     )
 
 
+app = create_app()
+
+
+def main() -> None:
+    import uvicorn
+
+    uvicorn.run("app.api.app:app", host="0.0.0.0", port=8000, reload=False)
