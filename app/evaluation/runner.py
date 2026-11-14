@@ -72,3 +72,60 @@ def _classify_outcome(state) -> str:
     return ExpectedOutcome.NO_ACTION.value
 
 
+def _score(state, scenario: Scenario, env: EvalEnvironment, drifted: pl.DataFrame) -> ScenarioResult:
+    res = ScenarioResult(scenario=scenario, state=state)
+    res.detected_drift = bool(state.detected_issues or state.quality_anomalies)
+
+    # Correct diagnosis: expected tokens surface in issues/hypotheses/evidence.
+    rename_hyps = state.schema_context.get("rename_hypotheses", [])
+    rename_tokens = " ".join(
+        f"{h.get('source')} {h.get('target')} rename" for h in rename_hyps
+    )
+    haystack = " ".join(
+        [i.column or "" for i in state.detected_issues]
+        + [i.metric + (i.column or "") for i in state.quality_anomalies]
+        + [h.description for h in state.hypotheses]
+        + list(state.proposed_fix.evidence if state.proposed_fix else [])
+        + [rename_tokens]
+    ).lower()
+    res.correct_diagnosis = all(
+        token.lower() in haystack for token in scenario.expected_diagnosis
+    )
+
+    if state.proposed_fix is not None:
+        op_names = [o.operation.value for o in state.proposed_fix.operations]
+        if scenario.acceptable_fix:
+            res.safe_fix_proposed = any(op in scenario.acceptable_fix for op in op_names)
+        else:
+            res.safe_fix_proposed = len(op_names) == 0
+
+    vr = state.validation_report
+    res.validation_passed = bool(vr and vr.passed)
+    res.was_promoted = state.deployment_status == DeploymentStatus.ACTIVE
+    res.rolled_back = state.deployment_status == DeploymentStatus.ROLLED_BACK
+
+    # DATA LOSS: a destructive row-dropping operation actually deployed.
+    deployed_destructive = (
+        res.was_promoted
+        and state.proposed_fix is not None
+        and any(o.operation in ROW_DROP_OPS for o in state.proposed_fix.operations)
+    )
+    res.data_loss = deployed_destructive
+
+    # Unexpected mutation: deployed when the scenario demanded no action.
+    res.unexpected_mutation = res.was_promoted and scenario.expected_outcome in (
+        ExpectedOutcome.NO_ACTION,
+        ExpectedOutcome.POLICY_REJECTED,
+        ExpectedOutcome.VALIDATION_BLOCKED,
+    )
+
+    actual = _classify_outcome(state)
+    res.matched_outcome = actual == scenario.expected_outcome.value
+
+    res.tool_calls = state.tool_call_count
+    res.iterations = state.iteration
+    if state.error:
+        res.errors.append(state.error)
+    return res
+
+
