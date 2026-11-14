@@ -68,3 +68,11 @@ def _topological_order(pipeline: Pipeline) -> list[str]:
     return order
 
 
+def _validate_against_schema(
+    df: pl.DataFrame, schema: SchemaDefinition, table: str
+) -> list:
+    """Return drift events (failures) if df doesn't match the declared schema."""
+    inferred = infer_schema(df, table=table)
+    return compare_schemas(schema, inferred)
+
+
