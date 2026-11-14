@@ -155,3 +155,32 @@ class TestQuality:
         assert anomalies == []
 
 
+class TestAnomaly:
+    def test_row_count_drop_anomaly(self):
+        history = [
+            {"timestamp": f"t{i}", "row_count": 100000 + i, "duplicate_rate": 0.001}
+            for i in range(5)
+        ]
+        df = pl.DataFrame({"x": [1, 2, 3]})
+        anomalies = detect_anomalies(df, history, previous_row_count=103000)
+        assert any(a.metric == "row_count" for a in anomalies)
+
+    def test_null_rate_spike_absolute_guard(self):
+        history = [
+            {"timestamp": f"t{i}", "row_count": 100, "null_rate.a": 0.01}
+            for i in range(3)
+        ]
+        df = pl.DataFrame({"a": [None, None, None, None, 1.0, 2.0]})  # ~67% null
+        anomalies = detect_anomalies(df, history)
+        assert any(a.metric == "null_rate" and a.column == "a" for a in anomalies)
+
+    def test_no_spurious_anomaly(self):
+        history = [
+            {"timestamp": f"t{i}", "row_count": 100 + i, "duplicate_rate": 0.001}
+            for i in range(4)
+        ]
+        df = pl.DataFrame({"x": list(range(100))})
+        anomalies = detect_anomalies(df, history)
+        assert not any(a.metric == "row_count" for a in anomalies)
+
+
