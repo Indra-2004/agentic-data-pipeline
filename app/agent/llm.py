@@ -189,3 +189,55 @@ class DeterministicLLM(LLMProvider):
 # --- OpenAI implementation (tested via mock) ---
 
 
+class OpenAIProvider(LLMProvider):
+    """OpenAI-backed proposal builder implementing the same protocol.
+
+    Structured outputs are requested via ``response_format=json_object`` and
+    validated/mapped into a :class:`FixProposal`. Only *known* operation types
+    are accepted; anything else is discarded (never executed).
+    """
+
+    def __init__(self, api_key: str, model: str = "gpt-4o-mini") -> None:
+        import openai
+
+        self._client = openai.AsyncOpenAI(api_key=api_key)
+        self._model = model
+
+    def name(self) -> str:
+        return "openai"
+
+    async def build_proposal(self, **kwargs: Any) -> FixProposal | None:
+        drift_events: list[DriftEvent] = kwargs.get("drift_events", [])
+        quality_anomalies: list[QualityAnomaly] = kwargs.get("quality_anomalies", [])
+        hypotheses: list[str] = kwargs.get("hypotheses", [])
+        pipeline_context: dict[str, Any] = kwargs.get("pipeline_context", {})
+
+        system = (
+            "You are a cautious data infrastructure agent. Given schema drift and "
+            "quality anomalies, produce a JSON FixProposal using ONLY these "
+            "operation types: cast_type, rename_column, fill_null, drop_invalid_rows, "
+            "normalize_string, parse_timestamp, deduplicate, default_value, "
+            "column_mapping. Never propose arbitrary SQL or table drops. Risk is "
+            "LOW/MEDIUM/HIGH."
+        )
+        user = {
+            "drift_events": [e.model_dump() for e in drift_events],
+            "quality_anomalies": [a.model_dump() for a in quality_anomalies],
+            "hypotheses": hypotheses,
+            "pipeline_context": {"affected_stages": pipeline_context.get("affected_stages", [])},
+        }
+        try:
+            resp = await self._client.chat.completions.create(
+                model=self._model,
+                response_format={"type": "json_object"},
+                messages=[
+                    {"role": "system", "content": system},
+                    {"role": "user", "content": str(user)},
+                ],
+            )
+            raw = resp.choices[0].message.content
+            return _parse_proposal_json(raw)
+        except Exception:
+            return None
+
+
