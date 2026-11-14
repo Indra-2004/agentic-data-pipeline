@@ -32,3 +32,10 @@ class Severity(str, Enum):
     CRITICAL = "CRITICAL"
 
 
+class ColumnDefinition(BaseModel):
+    name: str
+    type: DataType
+    nullable: bool = False
+    description: str | None = None
+
+
