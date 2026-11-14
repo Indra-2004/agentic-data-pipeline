@@ -122,3 +122,19 @@ class TestOpenAIProviderMocked:
         assert all(o.operation == FixOperationType.CAST_TYPE for o in proposal.operations)
 
 
+class TestLLMFactory:
+    def test_creates_deterministic(self):
+        from app.config import LLMProviderKind
+
+        llm = create_llm(LLMProviderKind.DETERMINISTIC)
+        from app.agent.llm import DeterministicLLM
+
+        assert isinstance(llm, DeterministicLLM)
+
+    def test_openai_without_key_returns_none(self):
+        from app.config import LLMProviderKind
+
+        settings = MagicMock()
+        settings.openai_api_key = ""
+        settings.openai_model = "gpt"
+        assert create_llm(LLMProviderKind.OPENAI, settings) is None
