@@ -83,3 +83,10 @@ class LineageRow(Base):
     columns_json = Column(Text, default="[]")
 
 
+class RollbackRow(Base):
+    __tablename__ = "rollbacks"
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    run_id = Column(String, index=True)
+    record_json = Column(Text)
+
+
