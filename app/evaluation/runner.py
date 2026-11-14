@@ -34,3 +34,10 @@ class EvalEnvironment:
     customers: pl.DataFrame
 
 
+def build_environment() -> EvalEnvironment:
+    pipeline = PipelineRegistry("./pipelines").get("orders")
+    healthy = load_source("fixtures:orders.csv", "./datasets/fixtures")
+    customers = load_source("fixtures:customers.csv", "./datasets/fixtures")
+    return EvalEnvironment(pipeline_id=pipeline.id, healthy=healthy, customers=customers)
+
+
