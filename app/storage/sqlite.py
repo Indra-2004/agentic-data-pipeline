@@ -288,3 +288,56 @@ class SQLiteMetadataStore(MetadataStore):
         return [json.loads(r.record_json) for r in rows]
 
 
+class SQLiteWarehouse(Warehouse):
+    def __init__(self, db_path: str, *, create: bool = True) -> None:
+        self.db_path = db_path
+        self._engine = create_engine(f"sqlite:///{db_path}", future=True)
+        self._session_factory = sessionmaker(
+            bind=self._engine, expire_on_commit=False
+        )
+        if create:
+            Base.metadata.create_all(self._engine)
+
+    async def write_table(self, table: str, version: str, df: pl.DataFrame) -> None:
+        buffer = io.BytesIO()
+        df.write_parquet(buffer)
+        with self._session_factory() as s:
+            row = s.get(WarehouseVersionRow, (table, version))
+            if row is None:
+                row = WarehouseVersionRow(table=table, version=version)
+                s.add(row)
+            row.parquet = buffer.getvalue()
+            row.row_count = df.height
+            s.commit()
+
+    async def read_table(self, table: str, version: str) -> pl.DataFrame | None:
+        with self._session_factory() as s:
+            row = s.get(WarehouseVersionRow, (table, version))
+        if row is None or not row.parquet:
+            return None
+        return pl.read_parquet(io.BytesIO(row.parquet))
+
+    async def list_versions(self, table: str) -> list[str]:
+        with self._session_factory() as s:
+            rows = s.execute(
+                select(WarehouseVersionRow.version).where(
+                    WarehouseVersionRow.table == table
+                )
+            ).scalars().all()
+        return list(rows)
+
+    async def drop_version(self, table: str, version: str) -> None:
+        with self._session_factory() as s:
+            row = s.get(WarehouseVersionRow, (table, version))
+            if row is not None:
+                s.delete(row)
+                s.commit()
+
+    async def drop_table(self, table: str) -> None:
+        with self._session_factory() as s:
+            rows = s.execute(
+                select(WarehouseVersionRow).where(WarehouseVersionRow.table == table)
+            ).scalars().all()
+            for r in rows:
+                s.delete(r)
+            s.commit()
