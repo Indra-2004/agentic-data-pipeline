@@ -85,3 +85,14 @@ class TestTriage:
         assert r.status_code == 400
 
 
+class TestRuns:
+    def test_get_run_after_triage(self, client):
+        created = client.post("/pipelines/orders/triage").json()
+        r = client.get(f"/runs/{created['run_id']}")
+        assert r.status_code == 200
+        assert r.json()["run_id"] == created["run_id"]
+        assert r.json()["pipeline_id"] == "orders"
+
+    def test_unknown_run_404(self, client):
+        r = client.get("/runs/does-not-exist")
+        assert r.status_code == 404
