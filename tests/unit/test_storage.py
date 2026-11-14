@@ -26,3 +26,15 @@ from app.storage import (
 )
 
 
+def _orders_schema(version: int = 3) -> SchemaDefinition:
+    return SchemaDefinition(
+        table="orders",
+        version=version,
+        columns=[
+            ColumnDefinition(name="order_id", type=DataType.INTEGER),
+            ColumnDefinition(name="amount", type=DataType.DOUBLE),
+            ColumnDefinition(name="currency", type=DataType.VARCHAR),
+        ],
+    )
+
+
