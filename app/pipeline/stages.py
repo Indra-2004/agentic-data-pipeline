@@ -242,3 +242,9 @@ def _aggregate_daily_revenue(df: pl.DataFrame, cfg: dict) -> pl.DataFrame:
     return df.group_by(["order_id"]).agg(agg_cols)
 
 
+def get_stage_transform(name: str) -> Callable[[pl.DataFrame, dict], pl.DataFrame]:
+    if name not in _STAGE_TRANSFORMS:
+        raise TransformationError(f"Unknown stage transformation {name!r}")
+    return _STAGE_TRANSFORMS[name]
+
+
