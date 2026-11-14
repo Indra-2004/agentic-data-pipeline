@@ -367,3 +367,21 @@ agentic-data-pipeline/
 
 ---
 
+## 🧭 Design decisions
+
+- **Deterministic first.** Statistics, drift detection and anomaly detection are
+  computed deterministically; the LLM only turns evidence into a structured
+  proposal. The default `DeterministicLLM` makes every scenario reproducible
+  offline, and `OpenAIProvider` implements the same protocol for live use. Its
+  output goes through the same constrained-operation parser.
+- **Storage behind protocols.** `MetadataStore` and `Warehouse` are protocols,
+  so DuckDB or Postgres adapters are drop-in replacements rather than a rewrite.
+  Warehouse payloads are stored as Parquet blobs so dtypes survive the round
+  trip and snapshot/restore stays deterministic.
+- **No orchestrator dependency.** The pipeline runner is a lightweight typed
+  stage executor; Airflow, Dagster or Kafka would be adapters, not foundations.
+- **Fail safe, not fail open.** Every budget breach or policy rejection ends in
+  `SAFE_STOP`, never in a partial change.
+
+---
+
