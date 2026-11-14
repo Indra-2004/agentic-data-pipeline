@@ -25,3 +25,9 @@ class FixOperationType(str, Enum):
     COLUMN_MAPPING = "column_mapping"
 
 
+class OnError(str, Enum):
+    REJECT = "reject"
+    NULL = "null"
+    DROP = "drop"
+
+
