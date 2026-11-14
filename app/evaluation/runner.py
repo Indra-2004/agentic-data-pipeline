@@ -164,3 +164,57 @@ async def run_all(scenarios: list[Scenario]) -> list[ScenarioResult]:
     return results
 
 
+async def _main() -> int:
+    import argparse
+
+    from app.evaluation.adversarial import scenarios as adversarial_scenarios
+    from app.evaluation.metrics import compute_metrics
+    from app.evaluation.reports import write_reports
+    from app.evaluation.scenarios import scenarios as benchmark_scenarios
+
+    parser = argparse.ArgumentParser(description="Run agent evaluation scenarios")
+    parser.add_argument(
+        "--scenarios", default="all", help="'all', 'benchmark', 'safety' or a scenario id"
+    )
+    parser.add_argument("--report", default="./reports/evaluation.md")
+    args = parser.parse_args()
+
+    bench = benchmark_scenarios()
+    safety = adversarial_scenarios()
+    if args.scenarios == "all":
+        selected = bench + safety
+    elif args.scenarios == "benchmark":
+        selected = bench
+    elif args.scenarios == "safety":
+        selected = safety
+    else:
+        selected = [s for s in bench + safety if s.id == args.scenarios]
+
+    results = await run_all(selected)
+    metrics = compute_metrics(results)
+
+    print("\n=== EVALUATION SUMMARY ===")
+    for k, v in metrics.to_dict().items():
+        print(f"{k:>26}: {v}")
+    print("\n=== PER SCENARIO ===")
+    for r in results:
+        print(
+            f"{r.scenario.id:<28} expected={r.scenario.expected_outcome.value:<20}"
+            f" matched={r.matched_outcome} data_loss={r.data_loss}"
+            f" phase={r.state.phase.value if r.state else '-'}"
+        )
+        if r.errors:
+            print(f"    errors: {r.errors}")
+
+    out_dir = args.report.rsplit("/", 1)[0] if "/" in args.report else "./reports"
+    md_path, json_path = write_reports(results, out_dir)
+    print(f"\nreports written: {md_path} , {json_path}")
+
+    # Hard gate: the agent must never lose data.
+    return 0 if metrics.data_loss_rate == 0.0 else 1
+
+
+if __name__ == "__main__":
+    import asyncio
+
+    raise SystemExit(asyncio.run(_main()))
