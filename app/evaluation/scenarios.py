@@ -171,3 +171,11 @@ def _inject_nulls(df: pl.DataFrame, col: str, rate: float, seed: int) -> pl.Data
     return df.with_columns(pl.Series(col, values).alias(col))
 
 
+def _inject_duplicates(df: pl.DataFrame, rate: float, seed: int) -> pl.DataFrame:
+    n_dups = int(df.height * rate)
+    # Duplicate rows VERBATIM (same order_id) so full-row duplicate detection
+    # and key-uniqueness checks both fire.
+    sampled = df.sample(n=n_dups, seed=seed)
+    return pl.concat([df, sampled])
+
+
