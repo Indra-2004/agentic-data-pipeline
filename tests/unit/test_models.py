@@ -66,3 +66,23 @@ class TestSchemaDefinition:
         assert len(sd.add_version().columns) == 3
 
 
+class TestPipeline:
+    def test_stage_map(self):
+        stage = PipelineStage(
+            id="orders_clean",
+            name="Orders Clean",
+            input_schema=_orders_schema(),
+            output_schema=_orders_schema(version=4),
+            transformation="clean_orders",
+        )
+        p = Pipeline(
+            id="orders",
+            name="Orders Pipeline",
+            version="1.0",
+            source="fixtures:orders.csv",
+            stages=[stage],
+        )
+        assert p.stage_map()["orders_clean"].name == "Orders Clean"
+        assert p.base_input_schema().table == "orders"
+
+
