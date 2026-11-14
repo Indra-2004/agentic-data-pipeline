@@ -164,3 +164,44 @@ def apply_fix_operations(df: pl.DataFrame, ops: list[FixOperation]) -> pl.DataFr
     return result
 
 
+def _build_kwargs(op: FixOperation) -> dict:
+    """Build the kwargs an operation handler expects from a FixOperation."""
+    kwargs: dict[str, object] = {}
+    if op.column is not None:
+        kwargs["column"] = op.column
+
+    if op.operation == FixOperationType.CAST_TYPE:
+        if op.to_type is not None:
+            kwargs["to"] = op.to_type
+        if op.on_error is not None:
+            kwargs["on_error"] = op.on_error
+    elif op.operation in (
+        FixOperationType.FILL_NULL,
+        FixOperationType.DEFAULT_VALUE,
+    ):
+        if op.value is not None:
+            kwargs["value"] = op.value
+    elif op.operation == FixOperationType.RENAME_COLUMN:
+        if op.target is not None:
+            kwargs["target"] = op.target
+    elif op.operation == FixOperationType.NORMALIZE_STRING:
+        opts = set((op.target or "").split(","))
+        kwargs["lower"] = "lower" in opts
+        kwargs["strip"] = "nostrip" not in opts
+    elif op.operation == FixOperationType.PARSE_TIMESTAMP:
+        if op.target is not None:
+            kwargs["fmt"] = op.target
+    elif op.operation == FixOperationType.DROP_INVALID_ROWS:
+        if op.value is not None:
+            kwargs["invalid_values"] = op.value
+    elif op.operation == FixOperationType.COLUMN_MAPPING:
+        if op.value is not None:
+            kwargs["mapping"] = op.value
+        if op.target is not None:
+            kwargs["default"] = op.target
+
+    return kwargs
+
+
+# --- Named stage transformations (registry) ---
+
