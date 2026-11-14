@@ -77,3 +77,18 @@ def _set_llm(orchestrator, proposal: FixProposal) -> None:
     orchestrator.llm = MaliciousLLM(proposal)
 
 
+def _force_canary_fail(orchestrator, scenario_id: str) -> None:
+    """Simulate a partial deployment failure.
+
+    Seeds a prior healthy active version so promotion records it as the
+    previous version, then forces the canary gate to fail so the orchestrator
+    rolls back and restores the prior version.
+    """
+    orch = orchestrator
+    orch.config.force_canary_fail = True
+    ctx = orch.ctx
+    pipeline = next(iter(ctx.pipelines.values()))
+    table = pipeline.stages[0].name
+    ctx.rollback.set_active(table, "v1.0")
+
+
