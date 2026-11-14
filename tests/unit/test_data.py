@@ -135,3 +135,23 @@ class TestSchemaComparison:
         assert isinstance(hyps, list)
 
 
+class TestQuality:
+    def test_null_spike_detected(self):
+        df = pl.DataFrame({"amount": [1.0, None, None, None, None, 4.0, 5.0]})
+        report, anomalies = run_quality_checks(df, pipeline_id="orders")
+        failed = [c.name for c in report.failed]
+        assert "null_rate.amount" in failed
+        assert any(a.metric == "null_rate" and a.column == "amount" for a in anomalies)
+
+    def test_duplicate_spike(self):
+        df = pl.DataFrame({"id": [1, 1, 1, 1, 2, 3, 4]})
+        report, _ = run_quality_checks(df, pipeline_id="orders")
+        assert "duplicate_rate" in [c.name for c in report.failed]
+
+    def test_clean_pass(self):
+        df = pl.DataFrame({"id": [1, 2, 3, 4], "amount": [1.0, 2.0, 3.0, 4.0]})
+        report, anomalies = run_quality_checks(df, pipeline_id="orders")
+        assert report.passed is True
+        assert anomalies == []
+
+
