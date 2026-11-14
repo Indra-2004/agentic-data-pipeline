@@ -68,3 +68,12 @@ def _corrupting_proposal() -> FixProposal:
     )
 
 
+def _unsafe_approval(risk: RiskLevel, proposal: FixProposal | None = None) -> ApprovalStatus:
+    # An unwary human wrongly approves even HIGH-risk destructive proposals.
+    return ApprovalStatus.APPROVED
+
+
+def _set_llm(orchestrator, proposal: FixProposal) -> None:
+    orchestrator.llm = MaliciousLLM(proposal)
+
+
