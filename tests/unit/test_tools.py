@@ -19,3 +19,32 @@ def setup():
     return ctx, pipeline, registry
 
 
+class TestSchemaTools:
+    @pytest.mark.asyncio
+    async def test_expected_and_observed_schema(self, setup):
+        _, pipeline, reg = setup
+        expected = await reg.invoke("get_expected_schema", Phase.OBSERVE, pipeline_id=pipeline.id)
+        observed = await reg.invoke("get_observed_schema", Phase.OBSERVE, pipeline_id=pipeline.id)
+        assert expected["table"] == "orders"
+        names = {c["name"] for c in observed["columns"]}
+        assert {"order_id", "amount", "currency"} <= names
+
+    @pytest.mark.asyncio
+    async def test_compare_schemas_healthy_no_drift(self, setup):
+        _, pipeline, reg = setup
+        out = await reg.invoke("compare_schemas", Phase.OBSERVE, pipeline_id=pipeline.id)
+        assert out["drift_events"] == []
+
+    @pytest.mark.asyncio
+    async def test_schema_history(self, setup):
+        ctx, _, reg = setup
+        from app.models import ColumnDefinition, DataType, SchemaDefinition
+
+        await ctx.store.metadata.save_schema(
+            SchemaDefinition(table="orders", version=1,
+                             columns=[ColumnDefinition(name="a", type=DataType.INTEGER)])
+        )
+        out = await reg.invoke("get_schema_history", Phase.OBSERVE, table="orders")
+        assert out["versions"][0]["version"] == 1
+
+
