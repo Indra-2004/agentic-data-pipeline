@@ -69,3 +69,10 @@ class FixProposal(BaseModel):
     rollback_strategy: str | None = None
 
 
+class ValidationStatus(str, Enum):
+    PENDING = "pending"
+    PASSED = "passed"
+    FAILED = "failed"
+    SKIPPED = "skipped"
+
+
