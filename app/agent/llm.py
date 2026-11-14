@@ -32,3 +32,17 @@ from app.models import (
 )
 
 
+@runtime_checkable
+class LLMProviderProtocol(Protocol):
+    async def build_proposal(
+        self,
+        *,
+        drift_events: list[DriftEvent],
+        quality_anomalies: list[QualityAnomaly],
+        hypotheses: list[str],
+        pipeline_context: dict[str, Any],
+    ) -> FixProposal | None: ...
+
+    def name(self) -> str: ...
+
+
