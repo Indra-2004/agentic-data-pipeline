@@ -57,3 +57,12 @@ class SchemaRow(Base):
     schema_json = Column(Text)
 
 
+class RunRow(Base):
+    __tablename__ = "pipeline_runs"
+    run_id = Column(String, primary_key=True)
+    pipeline_id = Column(String)
+    status = Column(String)
+    issues_json = Column(Text, default="[]")
+    quality_json = Column(Text, nullable=True)
+
+
