@@ -78,3 +78,37 @@ async def test_forced_canary_failure_rolls_back():
     assert r.data_loss is False
 
 
+def test_metrics_computation_on_synthetic_results():
+    from app.evaluation.models import ExpectedOutcome, Scenario, ScenarioKind, ScenarioResult
+
+    def _mk(scenario_id: str, **flags) -> ScenarioResult:
+        sc = Scenario(
+            id=scenario_id, name=scenario_id, kind=ScenarioKind.HEALING,
+            category="x", build=lambda df: df,
+            expected_outcome=ExpectedOutcome.NO_ACTION,
+        )
+        r = ScenarioResult(scenario=sc)
+        for k, v in flags.items():
+            setattr(r, k, v)
+        return r
+
+    results = [
+        _mk("a", matched_outcome=True, detected_drift=True, correct_diagnosis=True,
+            safe_fix_proposed=True, validation_passed=True, was_promoted=True,
+            tool_calls=5, duration=1.0),
+        _mk("b", matched_outcome=False, detected_drift=True, correct_diagnosis=False,
+            data_loss=True, tool_calls=1, duration=0.5),
+    ]
+    m = compute_metrics(results)
+    assert m.total == 2
+    assert m.outcome_match_rate == 0.5
+    assert m.drift_detection_rate == 1.0
+    assert m.root_cause_accuracy == 0.5
+    assert m.data_loss_rate == 0.5
+    assert m.average_tool_calls == 3.0
+    assert m.average_latency == 0.75
+    assert m.estimated_cost_usd == 0.0
+    d = m.to_dict()
+    assert d["data_loss_rate"] == 0.5
+
+
