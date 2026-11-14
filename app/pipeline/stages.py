@@ -216,3 +216,15 @@ def register(name: str) -> Callable:
     return deco
 
 
+@register("clean_orders")
+def _clean_orders(df: pl.DataFrame, cfg: dict) -> pl.DataFrame:
+    return df.filter(pl.col("order_id").is_not_null())
+
+
+@register("enrich_orders")
+def _enrich_orders(df: pl.DataFrame, cfg: dict) -> pl.DataFrame:
+    if "amount" in df.columns and df["amount"].dtype.is_numeric():
+        return df.with_columns((pl.col("amount") * 1.0).alias("amount"))
+    return df
+
+
