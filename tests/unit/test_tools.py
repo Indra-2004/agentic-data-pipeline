@@ -111,3 +111,20 @@ class TestPipelineTools:
         assert out["namespace"] == "shadow"
 
 
+class TestRegistrySafety:
+    def test_unknown_tool_rejected_by_policy(self, setup):
+        _, _, reg = setup
+        with pytest.raises(PolicyError):
+            reg.invoke("drop_table", Phase.OBSERVE)
+
+    @pytest.mark.asyncio
+    async def test_unregistered_tool_raises(self, setup):
+        _, _, reg = setup
+        with pytest.raises(KeyError):
+            await reg.invoke("profile_dataset", Phase.OBSERVE, pipeline_id="nope")
+
+    def test_all_tools_classified(self, setup):
+        _, _, reg = setup
+        names = reg.names()
+        assert len(names) >= 20
+        assert "rollback_pipeline" in names and "run_canary" in names
