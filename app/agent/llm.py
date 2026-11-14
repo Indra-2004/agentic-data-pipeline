@@ -284,3 +284,27 @@ def _parse_proposal_json(raw: str | None) -> FixProposal | None:
         return None
 
 
+def create_llm(provider: object, settings: object | None = None) -> LLMProvider | None:
+    """Create the LLM provider selected by config.
+
+    ``provider`` is an ``LLMProviderKind``-compatible enum or a string. Returns
+    None for ``openai`` when no API key is configured.
+    """
+    from app.config import LLMProviderKind
+
+    try:
+        kind = LLMProviderKind(provider.value if hasattr(provider, "value") else provider)
+    except ValueError:
+        kind = LLMProviderKind.DETERMINISTIC
+
+    if kind == LLMProviderKind.OPENAI:
+        if settings is None:
+            from app.config import settings as _s
+
+            settings = _s
+        key = getattr(settings, "openai_api_key", "") or ""
+        if not key:
+            return None
+        return OpenAIProvider(api_key=key, model=getattr(settings, "openai_model", "gpt-4o-mini"))
+
+    return DeterministicLLM()
