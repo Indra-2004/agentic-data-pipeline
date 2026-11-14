@@ -191,3 +191,49 @@ def _referential_checks(
             )
 
 
+def _run_custom_check(
+    report: QualityReport,
+    anomalies: list[QualityAnomaly],
+    df: pl.DataFrame,
+    c: dict[str, Any],
+) -> None:
+    name = c.get("name", "custom")
+    kind = c.get("kind")
+    col = c.get("column")
+    if col is not None and col not in df.columns:
+        return
+
+    if kind == "range" and col is not None:
+        mn = float(df[col].min())
+        mx = float(df[col].max())
+        lo = float(c.get("min", float("-inf")))
+        hi = float(c.get("max", float("inf")))
+        ok = lo <= mn and mx <= hi
+        report.checks.append(
+            QualityCheck(
+                name=name, column=col, metric="range",
+                threshold=None, observed=f"[{mn}, {mx}]",
+                status="pass" if ok else "fail",
+                message=f"range {mn}..{mx} outside [{lo}, {hi}]",
+            )
+        )
+        if not ok:
+            anomalies.append(QualityAnomaly(metric="range", column=col,
+                                            severity=Severity.HIGH,
+                                            observed=[mn, mx]))
+
+    elif kind == "unique" and col is not None:
+        n = df.height
+        uniq = df[col].n_unique()
+        ok = uniq == n
+        report.checks.append(
+            QualityCheck(
+                name=name, column=col, metric="uniqueness",
+                threshold=1.0, observed=uniq / n if n else 1.0,
+                status="pass" if ok else "fail",
+                message="column not unique" if not ok else None,
+            )
+        )
+        if not ok:
+            anomalies.append(QualityAnomaly(metric="uniqueness", column=col,
+                                            severity=Severity.HIGH))
