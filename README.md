@@ -92,3 +92,21 @@ Settings come from environment variables (see `.env.example`). The main ones:
 | `SHP_APPROVAL_MODE` | `auto` | `auto`, `manual` or `human_in_loop` |
 | `SHP_STORAGE_BACKEND` | `sqlite` | `sqlite` or `memory` |
 
+## Project structure
+
+```text
+app/
+  agent/          agent loop, policies, diagnosis, LLM providers
+  api/            FastAPI app
+  data/           profiling, quality checks, anomaly detection, lineage
+  evaluation/     test scenarios and reports
+  pipeline/       pipeline stages and runner
+  rollback/       version restore
+  storage/        SQLite and in-memory storage
+  tools/          tools the agent is allowed to use
+  validation/     shadow validation
+datasets/         sample data
+pipelines/        pipeline definitions
+tests/            unit, integration, agent, safety and evaluation tests
+```
+
