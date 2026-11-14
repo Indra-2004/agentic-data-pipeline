@@ -34,3 +34,13 @@ from app.models.schema import DriftEvent, SchemaDefinition
 from app.storage.base import MetadataStore, Warehouse
 
 
+class Base(DeclarativeBase):
+    pass
+
+
+class AgentStateRow(Base):
+    __tablename__ = "agent_state"
+    run_id = Column(String, primary_key=True)
+    state_json = Column(Text)
+
+
