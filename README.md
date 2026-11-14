@@ -94,3 +94,44 @@ scenario.
 
 ---
 
+## 🏗️ Architecture
+
+```text
+        Source (CSV fixtures)
+              │
+        Ingestion (load_source)
+              │
+        Raw observed data ─────────────┐
+              │                        │
+   ┌──────────▼──────────┐    ┌────────▼─────────┐
+   │  Pipeline Runner    │    │  Agent Loop       │
+   │  (typed stages)     │◄───┤  bounded FSM      │
+   │  clean → aggregate  │    │  OBSERVE…ROLLBACK │
+   └──────────┬──────────┘    └────────┬─────────┘
+              │                        │ tools (policy-gated)
+       ┌──────▼──────┐          ┌──────▼───────┐
+       │  Warehouse  │          │ Metadata     │
+       │  (versioned)│          │ store        │
+       └─────────────┘          └──────────────┘
+        main / shadow /          state, schema registry,
+        canary namespaces        metric history, rollbacks
+```
+
+The agent loop is an **explicit, bounded state machine**:
+
+```mermaid
+flowchart LR
+    OBSERVE --> DETECT --> DIAGNOSE --> PLAN --> PROPOSE --> VALIDATE --> APPROVAL
+    APPROVAL --> STAGE --> CANARY --> MONITOR --> SUCCESS
+    MONITOR -->|canary unhealthy| ROLLBACK
+    DIAGNOSE -.->|nothing safe to fix| SAFE_STOP
+    VALIDATE -.->|validation blocked| SAFE_STOP
+    APPROVAL -.->|policy rejected| SAFE_STOP
+```
+
+Any guardrail breach — iteration budget, tool-call budget, execution timeout or
+resource budget — ends the run in `SAFE_STOP`. The agent prefers doing nothing
+over making an unsafe change.
+
+---
+
