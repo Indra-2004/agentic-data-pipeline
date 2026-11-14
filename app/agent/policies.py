@@ -20,3 +20,11 @@ from app.models import ApprovalStatus, FixOperationType, FixProposal, RiskLevel
 from app.models.state import Phase
 
 
+class ActionClass(str, Enum):
+    READ_ONLY = "READ_ONLY"
+    SHADOW_WRITE = "SHADOW_WRITE"
+    STAGING_WRITE = "STAGING_WRITE"
+    PRODUCTION_WRITE = "PRODUCTION_WRITE"
+    ROLLBACK = "ROLLBACK"
+
+
