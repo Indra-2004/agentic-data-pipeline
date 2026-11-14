@@ -104,3 +104,23 @@ class MemoryMetadataStore(MetadataStore):
         return [r for r in self._rollbacks if r.get("run_id") == run_id]
 
 
+class MemoryWarehouse(Warehouse):
+    def __init__(self) -> None:
+        self._tables: dict[str, dict[str, pl.DataFrame]] = {}
+
+    async def write_table(
+        self, table: str, version: str, df: pl.DataFrame
+    ) -> None:
+        self._tables.setdefault(table, {})[version] = df
+
+    async def read_table(self, table: str, version: str) -> pl.DataFrame | None:
+        return self._tables.get(table, {}).get(version)
+
+    async def list_versions(self, table: str) -> list[str]:
+        return list(self._tables.get(table, {}))
+
+    async def drop_version(self, table: str, version: str) -> None:
+        self._tables.get(table, {}).pop(version, None)
+
+    async def drop_table(self, table: str) -> None:
+        self._tables.pop(table, None)
