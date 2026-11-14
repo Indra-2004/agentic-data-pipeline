@@ -31,3 +31,9 @@ class OnError(str, Enum):
     DROP = "drop"
 
 
+class RiskLevel(str, Enum):
+    LOW = "LOW"
+    MEDIUM = "MEDIUM"
+    HIGH = "HIGH"
+
+
