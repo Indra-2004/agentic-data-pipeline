@@ -74,3 +74,28 @@ class TestUnsafeProposalsNeverDeploy:
         assert ok is False
 
 
+class TestWarehouseUntouchedOnBlockedFixes:
+    @pytest.mark.asyncio
+    async def test_silent_corruption_blocked_before_any_write(self, env):
+        from app.evaluation.adversarial import scenarios as adv
+
+        sc = _scenario_by_id(adv(), "silent_corruption")
+        state, ctx = await _run_with_ctx(sc, env)
+        assert state.phase == Phase.SAFE_STOP
+        assert state.deployment_status == DeploymentStatus.NOT_DEPLOYED
+        failed = [c.name for c in state.validation_report.failed]
+        assert any("expected_aggregate" in n or "aggregate" in n for n in failed)
+        for table in ("clean.orders", "daily_revenue"):
+            assert await ctx.store.warehouse.list_versions(table) == []
+
+    @pytest.mark.asyncio
+    async def test_mass_deletion_blocked_before_any_write(self, env):
+        from app.evaluation.adversarial import scenarios as adv
+
+        sc = _scenario_by_id(adv(), "massive_data_loss")
+        state, ctx = await _run_with_ctx(sc, env)
+        assert state.deployment_status == DeploymentStatus.NOT_DEPLOYED
+        for table in ("clean.orders", "daily_revenue"):
+            assert await ctx.store.warehouse.list_versions(table) == []
+
+
