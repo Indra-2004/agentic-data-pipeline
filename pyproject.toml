@@ -30,3 +30,6 @@ dev = [
     "httpx>=0.27",
 ]
 
+[project.scripts]
+shp-agent = "app.api.app:main"
+
