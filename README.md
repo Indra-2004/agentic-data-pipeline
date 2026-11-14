@@ -81,3 +81,14 @@ failure cases.
 Many scenarios are meant to end with *no change*. In those cases, the right
 move is to report the problem, not to fix it.
 
+## Configuration
+
+Settings come from environment variables (see `.env.example`). The main ones:
+
+| Variable | Default | Meaning |
+|---|---|---|
+| `SHP_LLM_PROVIDER` | `deterministic` | `deterministic` (offline) or `openai` |
+| `OPENAI_API_KEY` | – | Needed only for `openai` |
+| `SHP_APPROVAL_MODE` | `auto` | `auto`, `manual` or `human_in_loop` |
+| `SHP_STORAGE_BACKEND` | `sqlite` | `sqlite` or `memory` |
+
