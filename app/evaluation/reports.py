@@ -58,3 +58,16 @@ def to_markdown(results: list[ScenarioResult], metrics: EvalMetrics) -> str:
     return "\n".join(lines) + "\n"
 
 
+def write_reports(
+    results: list[ScenarioResult],
+    out_dir: str | Path = "./reports",
+) -> tuple[Path, Path]:
+    metrics = compute_metrics(results)
+    data = build_report_data(results, metrics)
+    out = Path(out_dir)
+    out.mkdir(parents=True, exist_ok=True)
+    md_path = out / "evaluation.md"
+    json_path = out / "evaluation.json"
+    md_path.write_text(to_markdown(results, metrics))
+    json_path.write_text(json.dumps(data, indent=2, default=str))
+    return md_path, json_path
