@@ -74,3 +74,13 @@ class DriftEvent(BaseModel):
     severity: Severity = Severity.LOW
 
 
+class RenameHypothesis(BaseModel):
+    """A *possible* rename (source -> target), deliberately not treated as fact."""
+
+    source: str
+    target: str
+    name_similarity: float = 0.0
+    type_similarity: float = 0.0
+    value_similarity: float = 0.0
+    historical_support: bool = False
+    confidence: float = 0.0
