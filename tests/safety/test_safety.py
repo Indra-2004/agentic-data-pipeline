@@ -99,3 +99,32 @@ class TestWarehouseUntouchedOnBlockedFixes:
             assert await ctx.store.warehouse.list_versions(table) == []
 
 
+class TestRollbackRestoresPreviousVersion:
+    @pytest.mark.asyncio
+    async def test_partial_failure_restores_previous_version(self, env):
+        from app.evaluation.adversarial import scenarios as adv
+
+        sc = _scenario_by_id(adv(), "partial_deployment_failure")
+        state, ctx = await _run_with_ctx(sc, env)
+        assert state.deployment_status == DeploymentStatus.ROLLED_BACK
+        assert state.rollback_status is not None
+        # The seeded previous healthy version still exists and is intact.
+        table = next(iter(ctx.pipelines.values())).stages[0].name
+        restored = await ctx.store.warehouse.read_table(table, "main:v1.0")
+        assert restored is not None
+        assert restored.height == env.healthy.height
+
+    @pytest.mark.asyncio
+    async def test_rollback_is_idempotent(self):
+        from app.rollback.manager import RollbackManager
+        from app.storage import MemoryWarehouse
+
+        rm = RollbackManager(MemoryWarehouse())
+        rm.set_active("t", "v1")
+        rm.set_active("t", "v2")
+        first = await rm.rollback("r", "t", reason="x")
+        second = await rm.rollback("r", "t", reason="x")
+        assert first.rolled_back is True
+        assert second.rolled_back is False  # idempotent no-op
+
+
