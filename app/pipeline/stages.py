@@ -60,3 +60,14 @@ def op_deduplicate(df: pl.DataFrame) -> pl.DataFrame:
     return df.unique()
 
 
+def op_normalize_string(
+    df: pl.DataFrame, column: str, *, lower: bool = False, strip: bool = True
+) -> pl.DataFrame:
+    expr = pl.col(column)
+    if strip:
+        expr = expr.str.strip_chars()
+    if lower:
+        expr = expr.str.to_lowercase()
+    return df.with_columns(expr.alias(column))
+
+
