@@ -9,7 +9,7 @@ description = "Self-Healing Data Pipeline Agent: detect, diagnose, fix, validate
 readme = "README.md"
 requires-python = ">=3.12"
 license = { text = "MIT" }
-authors = [{ name = "BibekP" }]
+authors = [{ name = "Indra-2004" }]
 dependencies = [
     "pydantic>=2.9",
     "pydantic-settings>=2.5",
