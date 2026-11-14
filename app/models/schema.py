@@ -39,3 +39,21 @@ class ColumnDefinition(BaseModel):
     description: str | None = None
 
 
+class SchemaDefinition(BaseModel):
+    table: str
+    version: int = 1
+    columns: list[ColumnDefinition] = Field(default_factory=list)
+
+    @property
+    def column_map(self) -> dict[str, ColumnDefinition]:
+        return {c.name: c for c in self.columns}
+
+    def column_names(self) -> list[str]:
+        return [c.name for c in self.columns]
+
+    def add_version(self) -> SchemaDefinition:
+        return self.model_copy(
+            update={"version": self.version + 1, "columns": list(self.columns)}
+        )
+
+
