@@ -150,3 +150,13 @@ class TestBudgetsAreEnforced:
         assert cfg.timeout_seconds > 0
 
 
+class TestPhaseGating:
+    @pytest.mark.asyncio
+    async def test_production_write_never_permitted_without_approval(self):
+        from app.agent.policies import PolicyEngine, PolicyError
+        from app.models.state import Phase
+
+        p = PolicyEngine(approval_mode="auto")
+        for phase in (Phase.OBSERVE, Phase.DETECT, Phase.DIAGNOSE, Phase.MONITOR):
+            with pytest.raises(PolicyError):
+                p.assert_action_allowed("run_canary", phase, ApprovalStatus.NOT_REQUIRED)
