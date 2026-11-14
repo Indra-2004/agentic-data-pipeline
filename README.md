@@ -221,3 +221,11 @@ All settings are environment-driven (prefix `SHP_`, see `.env.example`):
 - **No orchestrator dependency.** The pipeline runner is a lightweight typed
   stage executor; Airflow/Kafka/etc. would be adapters, not foundations.
 
+## Extending
+
+- **Real LLM:** set `SHP_LLM_PROVIDER=openai` and `OPENAI_API_KEY`. The provider
+  is mock-tested; the policy engine still gates everything it emits.
+- **New storage:** implement `MetadataStore`/`Warehouse` (e.g. DuckDB, Postgres)
+  and register it in `app/storage/__init__.py`.
+- **New scenarios:** add a `Scenario` to `app/evaluation/scenarios.py` with a
+  `build` function, expected diagnosis, acceptable fix, and expected outcome.
