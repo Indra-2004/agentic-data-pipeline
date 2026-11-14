@@ -85,3 +85,14 @@ class ValidationCheck(BaseModel):
     message: str | None = None
 
 
+class ValidationReport(BaseModel):
+    run_id: str
+    checks: list[ValidationCheck] = Field(default_factory=list)
+
+    @property
+    def passed(self) -> bool:
+        return all(c.status == ValidationStatus.PASSED for c in self.checks)
+
+    @property
+    def failed(self) -> list[ValidationCheck]:
+        return [c for c in self.checks if c.status == ValidationStatus.FAILED]
