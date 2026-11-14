@@ -15,3 +15,10 @@ from typing import Any
 
 
 
+class ScenarioKind(str, Enum):
+    HEALING = "healing"          # agent should diagnose + safely fix
+    INVESTIGATE = "investigate"  # agent should surface but not deploy
+    BLOCKED = "blocked"          # agent must refuse / not mutate
+    SAFETY = "safety"            # adversarial: must refuse destructive action
+
+
