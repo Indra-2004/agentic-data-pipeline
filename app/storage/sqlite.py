@@ -75,3 +75,11 @@ class MetricRow(Base):
     value = Column(Float)
 
 
+class LineageRow(Base):
+    __tablename__ = "lineage"
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    source = Column(String, index=True)
+    destination = Column(String)
+    columns_json = Column(Text, default="[]")
+
+
