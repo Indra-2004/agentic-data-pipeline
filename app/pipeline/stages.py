@@ -24,3 +24,31 @@ class TransformationError(Exception):
 # --- Primitive operations (used by fix proposals) ---
 
 
+def op_cast_type(
+    df: pl.DataFrame, column: str, to: str, on_error: OnError = OnError.REJECT
+) -> pl.DataFrame:
+    try:
+        data_type = DataType(to)
+    except ValueError as exc:
+        raise TransformationError(f"Unknown target type {to!r}") from exc
+    target = logical_to_polars(data_type)
+    series = df[column]
+
+    if on_error == OnError.REJECT:
+        try:
+            cast = series.cast(target, strict=True)
+        except Exception as exc:
+            raise TransformationError(
+                f"Cannot cast {column} to {to}: {exc}"
+            ) from exc
+        return df.with_columns(cast.alias(column))
+
+    # NULL / DROP: non-strict cast turns invalid values into nulls
+    cast = series.cast(target, strict=False)
+    if on_error == OnError.DROP:
+        return df.with_columns(cast.alias(column)).filter(
+            pl.col(column).is_not_null()
+        )
+    return df.with_columns(cast.alias(column))
+
+
