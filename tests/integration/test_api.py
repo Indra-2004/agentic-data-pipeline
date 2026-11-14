@@ -21,3 +21,13 @@ def client(monkeypatch, tmp_path):
         yield c
 
 
+class TestHealth:
+    def test_health(self, client):
+        r = client.get("/health")
+        assert r.status_code == 200
+        body = r.json()
+        assert body["status"] == "ok"
+        assert body["llm_provider"] == "deterministic"
+        assert body["storage_backend"] == "memory"
+
+
