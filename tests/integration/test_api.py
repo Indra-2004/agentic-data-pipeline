@@ -31,3 +31,13 @@ class TestHealth:
         assert body["storage_backend"] == "memory"
 
 
+class TestPipelines:
+    def test_list_pipelines(self, client):
+        r = client.get("/pipelines")
+        assert r.status_code == 200
+        pipelines = r.json()
+        assert any(p["id"] == "orders" for p in pipelines)
+        orders = next(p for p in pipelines if p["id"] == "orders")
+        assert "orders_clean" in orders["stages"]
+
+
