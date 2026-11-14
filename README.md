@@ -211,3 +211,26 @@ a health check against `/health`.
 
 ---
 
+## 🌐 REST API
+
+| Method | Endpoint | Description |
+|---|---|---|
+| `GET` | `/health` | Service health check |
+| `GET` | `/pipelines` | List registered pipelines |
+| `POST` | `/pipelines/{pipeline_id}/triage` | Run the agent against a pipeline's source |
+| `GET` | `/runs/{run_id}` | Fetch the full persisted triage state |
+
+```bash
+curl localhost:8000/health
+curl localhost:8000/pipelines
+curl -X POST localhost:8000/pipelines/orders/triage        # healthy source -> no action
+curl localhost:8000/runs/<run_id>
+```
+
+`POST /pipelines/{pipeline_id}/triage` accepts an optional body
+`{"source": "<path-or-fixture-key>", "limit": 1000}`. Runs are bounded
+(sub-second on demo-scale data) and their state is persisted for later
+inspection.
+
+---
+
