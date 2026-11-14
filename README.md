@@ -423,3 +423,9 @@ agentic-data-pipeline/
 
 ---
 
+## 👤 Author
+
+**Indra-2004** — [github.com/Indra-2004](https://github.com/Indra-2004)
+
+If you find this project useful, consider giving it a ⭐!
+
