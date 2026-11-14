@@ -99,3 +99,33 @@ class TestDriftEvent:
         assert e.severity == Severity.HIGH
 
 
+class TestFixProposal:
+    def test_cast_operation_roundtrip(self):
+        op = FixOperation(
+            operation=FixOperationType.CAST_TYPE,
+            column="amount",
+            from_type="VARCHAR",
+            to_type="DOUBLE",
+            on_error=OnError.REJECT,
+        )
+        assert op.operation.value == "cast_type"
+        assert op.to_type == "DOUBLE"
+
+    def test_mapping_fix(self):
+        prop = FixProposal(
+            root_cause="type drift",
+            operations=[
+                FixOperation(
+                    operation=FixOperationType.CAST_TYPE,
+                    column="amount",
+                    to_type="DOUBLE",
+                )
+            ],
+            affected_stages=["orders_clean"],
+            risk=RiskLevel.LOW,
+            confidence=0.95,
+        )
+        assert prop.risk == RiskLevel.LOW
+        assert prop.confidence > 0.9
+
+
