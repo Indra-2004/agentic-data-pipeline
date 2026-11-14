@@ -18,3 +18,11 @@ from app.agent.orchestrator import Orchestrator, TriageConfig
 from app.validation.engine import shadow_validate
 
 
+def _orders_pipeline():
+    return PipelineRegistry("./pipelines").get("orders")
+
+
+def _healthy_df():
+    return load_source("fixtures:orders.csv", "./datasets/fixtures")
+
+
