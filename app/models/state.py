@@ -29,3 +29,11 @@ class Phase(str, Enum):
     SAFE_STOP = "SAFE_STOP"
 
 
+class ApprovalStatus(str, Enum):
+    NOT_REQUIRED = "not_required"
+    PENDING = "pending"
+    APPROVED = "approved"
+    REJECTED = "rejected"
+    AUTO_APPROVED = "auto_approved"
+
+
