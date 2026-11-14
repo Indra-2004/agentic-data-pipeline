@@ -206,3 +206,18 @@ All settings are environment-driven (prefix `SHP_`, see `.env.example`):
 
 ---
 
+## Design decisions
+
+- **Deterministic first.** Basic statistics, drift detection and anomaly
+  detection are computed deterministically; the LLM only turns evidence into a
+  structured proposal. The default `DeterministicLLM` makes every scenario fully
+  reproducible offline; `OpenAIProvider` implements the same protocol for live
+  use (unavailable without a key, and its output is sanitized through the same
+  constrained-operation parser).
+- **SQLite + in-memory behind protocols.** `MetadataStore` and `Warehouse` are
+  protocols, so DuckDB/Postgres adapters are drop-in replacements rather than a
+  rewrite. Warehouse payloads are stored as Parquet blobs so dtypes survive the
+  round trip — snapshot/restore stays deterministic.
+- **No orchestrator dependency.** The pipeline runner is a lightweight typed
+  stage executor; Airflow/Kafka/etc. would be adapters, not foundations.
+
