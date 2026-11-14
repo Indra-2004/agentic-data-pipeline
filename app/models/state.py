@@ -46,3 +46,12 @@ class DeploymentStatus(str, Enum):
     FAILED = "failed"
 
 
+class Hypothesis(BaseModel):
+    id: str
+    description: str
+    confidence: float = 0.0
+    evidence: list[str] = Field(default_factory=list)
+    is_selected: bool = False
+    fix_hint: FixProposal | None = None
+
+
