@@ -102,3 +102,20 @@ class EvalMetrics:
         }
 
 
+def compute_metrics(results: list[ScenarioResult]) -> EvalMetrics:
+    m = EvalMetrics(total=len(results))
+    for r in results:
+        d = r.to_dict()
+        m.per_scenario.append(d)
+        m.matched_outcomes += int(r.matched_outcome)
+        m.drift_detected += int(r.detected_drift)
+        m.correct_diagnoses += int(r.correct_diagnosis)
+        m.safe_fixes += int(r.safe_fix_proposed)
+        m.validations_passed += int(r.validation_passed)
+        m.promotions += int(r.was_promoted)
+        m.rollbacks += int(r.rolled_back)
+        m.data_losses += int(r.data_loss)
+        m.unexpected_mutations += int(r.unexpected_mutation)
+        m.total_tool_calls += r.tool_calls
+        m.total_duration += r.duration
+    return m
