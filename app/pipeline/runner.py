@@ -37,3 +37,18 @@ class StageResult:
     output_df: pl.DataFrame | None = None
 
 
+@dataclass
+class RunResult:
+    pipeline_id: str
+    ok: bool
+    stages: list[StageResult] = field(default_factory=list)
+    final_df: pl.DataFrame | None = None
+    error: str | None = None
+
+    def failed_stages(self) -> list[StageResult]:
+        return [s for s in self.stages if not s.ok]
+
+    def first_stage(self) -> StageResult | None:
+        return self.stages[0] if self.stages else None
+
+
