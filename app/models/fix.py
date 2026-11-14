@@ -37,3 +37,20 @@ class RiskLevel(str, Enum):
     HIGH = "HIGH"
 
 
+class FixOperation(BaseModel):
+    """A single declarative operation within a fix.
+
+    Example::
+        {"operation": "cast_type", "column": "amount", "from": "VARCHAR",
+         "to": "DOUBLE", "on_error": "reject"}
+    """
+
+    operation: FixOperationType
+    column: str | None = None
+    target: str | None = None  # rename target / cast target type / etc.
+    from_type: str | None = None
+    to_type: str | None = None
+    value: object | None = None
+    on_error: OnError = OnError.REJECT
+
+
