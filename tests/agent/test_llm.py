@@ -18,3 +18,12 @@ from app.models import (
 from app.agent import policies  # noqa: F401 (ensure policy package imports)
 
 
+def _type_drift() -> DriftEvent:
+    return DriftEvent(
+        type=DriftEventType.TYPE_CHANGED,
+        column="amount",
+        expected=DataType.DOUBLE.value,
+        observed=DataType.VARCHAR.value,
+    )
+
+
