@@ -20,3 +20,13 @@ import polars as pl
 from app.evaluation.models import ExpectedOutcome, Scenario, ScenarioKind
 
 
+def _R(seed: int) -> random.Random:
+    return random.Random(seed)
+
+
+def _healthy() -> pl.DataFrame:
+    from app.data.loader import load_source
+
+    return load_source("fixtures:orders.csv", "./datasets/fixtures")
+
+
