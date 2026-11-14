@@ -165,3 +165,18 @@ def create_app() -> FastAPI:
     return app
 
 
+def _to_summary(state: PipelineTriageState) -> TriageSummary:
+    return TriageSummary(
+        run_id=state.run_id,
+        pipeline_id=state.pipeline_id,
+        phase=state.phase.value,
+        deployment_status=state.deployment_status.value,
+        final_result=state.final_result,
+        detected_issues=[i.model_dump() for i in state.detected_issues],
+        quality_anomalies=[a.model_dump() for a in state.quality_anomalies],
+        proposed_fix=state.proposed_fix.model_dump() if state.proposed_fix else None,
+        canary_metrics=state.canary_metrics,
+        error=state.error,
+    )
+
+
