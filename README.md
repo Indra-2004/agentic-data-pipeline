@@ -149,3 +149,65 @@ over making an unsafe change.
 
 ---
 
+## 🚀 Getting started
+
+### Prerequisites
+
+- Python **3.12+**
+- `make` (optional — every target has a plain-Python equivalent)
+- Docker (optional)
+
+### Local setup
+
+```bash
+# 1. Clone
+git clone https://github.com/Indra-2004/agentic-data-pipeline.git
+cd agentic-data-pipeline
+
+# 2. Create a virtual environment and install with dev extras
+python -m venv .venv
+source .venv/bin/activate          # Windows: .venv\Scripts\activate
+pip install -e ".[dev]"
+
+# 3. (Optional) copy the example environment file
+cp .env.example .env
+
+# 4. Regenerate the demo fixtures (already committed, so this is optional)
+python datasets/fixtures/_generate.py
+
+# 5. Run the tests
+make test                          # or: pytest
+
+# 6. Run the full evaluation
+make evals                         # or: python -m app.evaluation.runner --scenarios all --report reports/evaluation.md
+
+# 7. Start the API
+make api                           # uvicorn app.api.app:app on http://localhost:8000
+```
+
+Interactive API docs are then available at **http://localhost:8000/docs**.
+
+### Run with Docker
+
+```bash
+docker compose up --build
+```
+
+This builds the image, starts the API on port `8000` with the deterministic LLM
+and SQLite storage, persists the database in the `pipeline-data` volume and adds
+a health check against `/health`.
+
+### Make targets
+
+| Target | Description |
+|---|---|
+| `make install` / `make install-dev` | Install the package (with dev extras) |
+| `make test` | Run the full test suite |
+| `make unit` · `integration` · `agent` · `safety` · `evaluation` | Run a single test suite |
+| `make evals` | Run all scenarios and write `reports/evaluation.md` |
+| `make run` | Start the API with auto-reload |
+| `make api` | Start the API on `0.0.0.0:8000` |
+| `make clean` | Remove caches, coverage and reports |
+
+---
+
