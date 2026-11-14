@@ -38,3 +38,26 @@
 
 ---
 
+## 💡 Why this project
+
+Data pipelines break silently. A source system changes a column type overnight:
+
+```json
+{"user_id": 123, "amount": 49.99,   "currency": "USD"}   // yesterday
+{"user_id": 123, "amount": "49.99", "currency": "USD"}   // today
+```
+
+The pipeline expects `amount: DOUBLE` and now receives `VARCHAR`. Downstream
+revenue dashboards go wrong, and someone gets paged at 3 a.m.
+
+This project is **not** a chatbot that explains pipeline errors. It is an
+autonomous agent with a **bounded state machine**, a **policy engine that gates
+every action**, and an **evaluation framework** whose headline metric — the
+**data loss rate** — is held at **zero** across every benchmark and adversarial
+scenario.
+
+> **Core principle:** observe → diagnose → propose → validate → stage →
+> get approval → canary → monitor → roll back on any degradation.
+
+---
+
