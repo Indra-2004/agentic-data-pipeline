@@ -48,3 +48,37 @@ class TestSchemaTools:
         assert out["versions"][0]["version"] == 1
 
 
+class TestDataTools:
+    @pytest.mark.asyncio
+    async def test_profile_query_sample(self, setup):
+        _, pipeline, reg = setup
+        prof = await reg.invoke("profile_dataset", Phase.OBSERVE, pipeline_id=pipeline.id)
+        assert prof["row_count"] == 600
+        rows = await reg.invoke(
+            "query_dataset", Phase.OBSERVE, pipeline_id=pipeline.id,
+            columns=["order_id", "amount"], limit=5,
+        )
+        assert len(rows["order_id"]) == 5
+        sample = await reg.invoke(
+            "sample_rows", Phase.OBSERVE, pipeline_id=pipeline.id, column="currency", limit=3
+        )
+        assert len(sample["rows"]["currency"]) == 3
+
+    @pytest.mark.asyncio
+    async def test_quality_checks_and_metric_history(self, setup):
+        ctx, pipeline, reg = setup
+        out = await reg.invoke("run_quality_checks", Phase.OBSERVE, pipeline_id=pipeline.id)
+        assert out["passed"] is True
+        hist = await reg.invoke("get_metric_history", Phase.OBSERVE, table="orders")
+        assert hist["history"] == []
+
+    @pytest.mark.asyncio
+    async def test_compare_distributions(self, setup):
+        _, pipeline, reg = setup
+        out = await reg.invoke(
+            "compare_distributions", Phase.OBSERVE, pipeline_id=pipeline.id, column="currency"
+        )
+        assert out["column"] == "currency"
+        assert len(out["value_counts"]) > 0
+
+
