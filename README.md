@@ -34,3 +34,25 @@ If a step fails or a limit is hit, the agent stops without changing anything.
 - Every change is versioned, so rollback is always possible.
 - Instructions hidden inside the data are treated as data, not commands.
 
+## Quick start
+
+Requires Python 3.12+.
+
+```bash
+git clone https://github.com/Indra-2004/agentic-data-pipeline.git
+cd agentic-data-pipeline
+pip install -e ".[dev]"
+
+pytest                                          # run tests
+python -m app.evaluation.runner --scenarios all # run evaluation
+uvicorn app.api.app:app --port 8000             # start the API
+```
+
+Or with Docker:
+
+```bash
+docker compose up --build
+```
+
+API docs: http://localhost:8000/docs
+
