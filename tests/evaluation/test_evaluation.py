@@ -24,3 +24,12 @@ async def test_scenario_inventory():
     assert len(ids) == len(set(ids)), "scenario ids must be unique"
 
 
+@pytest.mark.asyncio
+async def test_every_scenario_matches_expected_outcome():
+    results = await run_all(benchmark_scenarios() + adversarial_scenarios())
+    mismatched = [
+        (r.scenario.id, r.scenario.expected_outcome.value) for r in results if not r.matched_outcome
+    ]
+    assert mismatched == [], f"scenarios deviated from expected outcome: {mismatched}"
+
+
