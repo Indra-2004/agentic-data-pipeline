@@ -69,3 +69,22 @@ class AppState:
     ctx = None
 
 
+def _build_context(registry: PipelineRegistry, store):
+    pipelines = {p.id: p for p in registry.list()}
+    lineage = LineageGraph(
+        [
+            LineageEdge("orders", "clean.orders", ["order_id", "amount", "currency"]),
+            LineageEdge("clean.orders", "daily_revenue", ["amount"]),
+        ]
+    )
+    references = {}
+    try:
+        customers = load_source("fixtures:customers.csv", str(settings.fixture_dir))
+        references["customer_id"] = customers
+    except FileNotFoundError:
+        pass
+    return make_context(
+        store=store, pipelines=pipelines, lineage=lineage, references=references
+    )
+
+
