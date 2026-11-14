@@ -46,3 +46,12 @@ class LLMProviderProtocol(Protocol):
     def name(self) -> str: ...
 
 
+class LLMProvider(ABC):
+    @abstractmethod
+    async def build_proposal(self, **kwargs: Any) -> FixProposal | None:
+        raise NotImplementedError
+
+
+# --- Deterministic, rule-based implementation ---
+
+
