@@ -19,3 +19,15 @@ from app.models import (
 from app.pipeline.schemas import infer_schema, polars_to_logical
 
 
+def _orders_expected() -> SchemaDefinition:
+    return SchemaDefinition(
+        table="orders",
+        version=3,
+        columns=[
+            ColumnDefinition(name="order_id", type=DataType.INTEGER),
+            ColumnDefinition(name="amount", type=DataType.DOUBLE),
+            ColumnDefinition(name="currency", type=DataType.VARCHAR),
+        ],
+    )
+
+
