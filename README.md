@@ -385,3 +385,16 @@ agentic-data-pipeline/
 
 ---
 
+## 🔌 Extending the agent
+
+- **Use a real LLM:** set `SHP_LLM_PROVIDER=openai` and `OPENAI_API_KEY`. The
+  policy engine still gates everything the model emits.
+- **Add a storage backend:** implement `MetadataStore` / `Warehouse` (e.g.
+  DuckDB, Postgres) and register it in `app/storage/__init__.py`.
+- **Add a scenario:** add a `Scenario` to `app/evaluation/scenarios.py` with a
+  `build` function, expected diagnosis, acceptable fix and expected outcome.
+- **Add a pipeline:** drop a JSON definition into `pipelines/` and register any
+  new stage transforms in `app/pipeline/stages.py`.
+
+---
+
