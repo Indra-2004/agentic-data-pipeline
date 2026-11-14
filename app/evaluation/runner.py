@@ -41,3 +41,21 @@ def build_environment() -> EvalEnvironment:
     return EvalEnvironment(pipeline_id=pipeline.id, healthy=healthy, customers=customers)
 
 
+def _fresh_ctx(env: EvalEnvironment):
+    store = BackendStore(MemoryMetadataStore(), MemoryWarehouse())
+    lineage = LineageGraph(
+        [
+            LineageEdge("orders", "clean.orders", ["order_id", "amount", "currency"]),
+            LineageEdge("clean.orders", "daily_revenue", ["amount"]),
+        ]
+    )
+    pipeline = PipelineRegistry("./pipelines").get("orders")
+    ctx = make_context(
+        store=store,
+        pipelines={pipeline.id: pipeline},
+        lineage=lineage,
+        references={"customer_id": env.customers},
+    )
+    return ctx, pipeline
+
+
