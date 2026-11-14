@@ -82,3 +82,90 @@ class PolicyError(Exception):
     """Raised when a tool call or fix is not permitted."""
 
 
+class PolicyEngine:
+    def __init__(self, approval_mode: str = "auto") -> None:
+        self.approval_mode = approval_mode
+
+    def classify_tool(self, tool_name: str) -> ActionClass:
+        if tool_name not in TOOL_ACTION_CLASS:
+            raise PolicyError(f"Unknown tool {tool_name!r} (not in tool registry)")
+        return TOOL_ACTION_CLASS[tool_name]
+
+    def tool_allowed_in_phase(self, tool_name: str, phase: Phase) -> bool:
+        cls = self.classify_tool(tool_name)
+        return cls in _PHASE_ACTION_ALLOW.get(phase, set())
+
+    def classify_fix(self, proposal: FixProposal) -> RiskLevel:
+        """Derive a risk level from a proposal (never from the LLM directly)."""
+        if proposal.risk == RiskLevel.HIGH:
+            return RiskLevel.HIGH
+        destructive = any(
+            o.operation in (FixOperationType.DROP_INVALID_ROWS,)
+            for o in proposal.operations
+        )
+        renames = any(o.operation == FixOperationType.RENAME_COLUMN for o in proposal.operations)
+        if destructive:
+            return RiskLevel.HIGH
+        if renames or any(o.operation == FixOperationType.DEDUPLICATE for o in proposal.operations):
+            return RiskLevel.MEDIUM
+        return RiskLevel.LOW
+
+    def required_approval(self, risk: RiskLevel) -> ApprovalStatus | None:
+        """Return the approval status required for a given risk.
+
+        ``None`` means no approval gate (auto). Returns PENDING when manual
+        approval is required for this risk in the current mode.
+        """
+        if risk == RiskLevel.LOW:
+            return ApprovalStatus.AUTO_APPROVED
+        if self.approval_mode == "auto":
+            # In auto mode we still gate MEDIUM/HIGH behind an explicit decision
+            # by the approving harness; unsafe/highly-destructive are rejected.
+            if risk == RiskLevel.HIGH:
+                return ApprovalStatus.REJECTED
+            return ApprovalStatus.PENDING
+        # manual / human_in_loop
+        return ApprovalStatus.PENDING
+
+    def validate_proposal(self, proposal: FixProposal) -> None:
+        """Reject proposals containing anything outside the constrained set."""
+        allowed = {op for op in FixOperationType}
+        for op in proposal.operations:
+            if op.operation not in allowed:
+                raise PolicyError(
+                    f"Operation {op.operation} is not in the constrained allow-list"
+                )
+            if op.operation == FixOperationType.CAST_TYPE and not op.to_type:
+                raise PolicyError("cast_type requires a to_type")
+
+    def can_deploy(
+        self, proposal: FixProposal, approval: ApprovalStatus
+    ) -> tuple[bool, str]:
+        """Whether a proposal may be staged/deployed given its approval status."""
+        risk = self.classify_fix(proposal)
+        required = self.required_approval(risk)
+        if required == ApprovalStatus.REJECTED:
+            return False, "HIGH-risk fix rejected without explicit gate"
+        if required == ApprovalStatus.PENDING:
+            return approval in (
+                ApprovalStatus.APPROVED,
+                ApprovalStatus.AUTO_APPROVED,
+            ), f"requires approval, got {approval.value}"
+        if required == ApprovalStatus.AUTO_APPROVED:
+            return True, "LOW-risk fix auto-approved"
+        return False, "no approval pathway"
+
+    def assert_action_allowed(
+        self, tool_name: str, phase: Phase, approval: ApprovalStatus | None = None
+    ) -> None:
+        """Raise PolicyError if the tool is not permitted in the current phase."""
+        cls = self.classify_tool(tool_name)
+        if cls not in _PHASE_ACTION_ALLOW.get(phase, set()):
+            raise PolicyError(
+                f"Tool {tool_name!r} ({cls.value}) not permitted in phase {phase.value}"
+            )
+        if cls in (ActionClass.PRODUCTION_WRITE, ActionClass.STAGING_WRITE):
+            if approval in (None, ApprovalStatus.REJECTED):
+                raise PolicyError(
+                    f"{tool_name!r} blocked: no production/staging approval"
+                )
