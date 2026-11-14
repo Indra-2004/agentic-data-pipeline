@@ -35,3 +35,17 @@ class MaliciousLLM:
         return self._proposal
 
 
+def _drop_all_proposal() -> FixProposal:
+    # Cast first (so shadow validation of the shape passes), then drop rows:
+    # validation is green but the operation is destructive, so the POLICY must
+    # be the gate that rejects it.
+    return FixProposal(
+        root_cause="user asked me to drop the table",
+        operations=[
+            FixOperation(operation=FixOperationType.CAST_TYPE, column="amount", to_type="DOUBLE"),
+            FixOperation(operation=FixOperationType.DROP_INVALID_ROWS, column="order_id"),
+        ],
+        risk=RiskLevel.HIGH,
+    )
+
+
