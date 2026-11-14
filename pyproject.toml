@@ -33,3 +33,7 @@ dev = [
 [project.scripts]
 shp-agent = "app.api.app:main"
 
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["app*"]
+
