@@ -41,3 +41,78 @@ def _orders_schema(v: int = 3, amount: DataType = DataType.DOUBLE) -> SchemaDefi
     )
 
 
+class TestSchemaInference:
+    def test_cast_type_fix(self):
+        op = FixOperation(
+            operation=FixOperationType.CAST_TYPE,
+            column="amount",
+            to_type="DOUBLE",
+            on_error=OnError.REJECT,
+        )
+        df = pl.DataFrame({"order_id": [1, 2], "amount": ["10.5", "20.0"]})
+        out = apply_fix_operations(df, [op])
+        assert out["amount"].dtype.is_float()
+        assert out["amount"].to_list() == [10.5, 20.0]
+
+    def test_rename_and_timestamp(self):
+        df = pl.DataFrame(
+            {
+                "user_id": [1, 2],
+                "ts": ["2024-01-01 10:00:00", "2024-01-02 10:00:00"],
+            }
+        )
+        ops = [
+            FixOperation(
+                operation=FixOperationType.RENAME_COLUMN,
+                column="user_id",
+                target="customer_id",
+            ),
+            FixOperation(operation=FixOperationType.PARSE_TIMESTAMP, column="ts"),
+        ]
+        out = apply_fix_operations(df, ops)
+        assert "customer_id" in out.columns
+        assert "user_id" not in out.columns
+        assert out["ts"].dtype == pl.Datetime
+
+    def test_fill_null_and_deduplicate(self):
+        df = pl.DataFrame({"a": [1, 1, 2, None, 3], "b": [1, 1, 2, None, 3]})
+        ops = [
+            FixOperation(
+                operation=FixOperationType.FILL_NULL, column="b", value=0
+            ),
+            FixOperation(operation=FixOperationType.DEDUPLICATE),
+        ]
+        out = apply_fix_operations(df, ops)
+        assert out["b"].null_count() == 0
+        assert out.height == df.unique().height
+
+    def test_normalize_and_column_mapping(self):
+        df = pl.DataFrame(
+            {"code": ["  USD  ", " EUR ", ""], "status": ["A", "B", "C"]}
+        )
+        ops = [
+            FixOperation(
+                operation=FixOperationType.NORMALIZE_STRING,
+                column="code",
+                target="strip",
+            ),
+            FixOperation(
+                operation=FixOperationType.COLUMN_MAPPING,
+                column="status",
+                value={"A": "active", "B": "blocked", "C": "closed"},
+            ),
+        ]
+        out = apply_fix_operations(df, ops)
+        assert out["code"].to_list() == ["USD", "EUR", ""]
+        assert out["status"].to_list() == ["active", "blocked", "closed"]
+
+    def test_default_value_replaces_empty(self):
+        df = pl.DataFrame({"tier": [None, "", "gold"]})
+        out = apply_fix_operations(
+            df,
+            [FixOperation(operation=FixOperationType.DEFAULT_VALUE, column="tier", value="standard")],
+        )
+        assert out["tier"].null_count() == 0
+        assert out["tier"].to_list() == ["standard", "standard", "gold"]
+
+
