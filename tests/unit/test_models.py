@@ -37,3 +37,20 @@ def _orders_schema(version: int = 3) -> SchemaDefinition:
     )
 
 
+class TestSettings:
+    def test_defaults(self):
+        s = Settings(_env_file=None)
+        assert s.llm_provider == LLMProviderKind.DETERMINISTIC
+        assert s.approval_mode == ApprovalMode.AUTO
+        assert s.storage_backend == StorageBackend.SQLITE
+        assert s.max_iterations > 0
+        assert s.max_tool_calls > 0
+
+    def test_env_prefix_override(self, monkeypatch):
+        monkeypatch.setenv("SHP_LLM_PROVIDER", "openai")
+        monkeypatch.setenv("SHP_APPROVAL_MODE", "manual")
+        s = Settings(_env_file=None)
+        assert s.llm_provider == LLMProviderKind.OPENAI
+        assert s.approval_mode == ApprovalMode.MANUAL
+
+
