@@ -136,3 +136,25 @@ class FakeLLM:
         return self._proposal
 
 
+class TestUnsafeFixRejected:
+    @pytest.mark.asyncio
+    async def test_destructive_proposal_rejected_no_mutation(self):
+        from app.models import FixProposal, RiskLevel
+
+        ctx = _ctx()
+        # Destructive: cast safely, then drop rows -> classification is HIGH.
+        bad = FakeLLM(
+            FixProposal(
+                root_cause="discard data",
+                operations=[
+                    FixOperation(operation=FixOperationType.CAST_TYPE, column="amount", to_type="DOUBLE"),
+                    FixOperation(operation=FixOperationType.DROP_INVALID_ROWS, column="amount"),
+                ],
+                risk=RiskLevel.HIGH,
+            )
+        )
+        orch = Orchestrator(ctx=ctx, llm=bad, config=TriageConfig())
+        state = await orch.run("orders", _drifted_df())
+        assert state.phase == Phase.SAFE_STOP
+        assert state.deployment_status == DeploymentStatus.NOT_DEPLOYED
+        assert "rejected" in (state.final_result or "")
