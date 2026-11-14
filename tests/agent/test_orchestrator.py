@@ -57,3 +57,13 @@ def _ctx() -> ToolContext:
     return ToolContext(store=store, pipelines={"orders": _pipeline()}, lineage=lineage)
 
 
+def _drifted_df(n: int = 100) -> pl.DataFrame:
+    return pl.DataFrame(
+        {
+            "order_id": list(range(n)),
+            "amount": [str(10 + i * 0.5) for i in range(n)],
+            "currency": ["USD" if i % 3 else "EUR" for i in range(n)],
+        }
+    )
+
+
