@@ -76,3 +76,65 @@ def _validate_against_schema(
     return compare_schemas(schema, inferred)
 
 
+async def run_pipeline(
+    pipeline: Pipeline,
+    df: pl.DataFrame,
+    warehouse: Warehouse | None = None,
+    *,
+    namespace: str = "main",
+    persist: bool = True,
+    strict_schema: bool = False,
+) -> RunResult:
+    """Run a pipeline over ``df``.
+
+    When ``warehouse`` is given and ``persist`` is True, the result of each stage
+    is written to ``<namespace>_<table>`` in the warehouse, enabling shadow runs
+    (namespace="shadow") vs production (namespace="main").
+    """
+    results: list[StageResult] = []
+    current = df
+    error: str | None = None
+    order = _topological_order(pipeline)
+    stage_by_id = pipeline.stage_map()
+
+    for stage_id in order:
+        stage = stage_by_id[stage_id]
+        try:
+            transform = get_stage_transform(stage.transformation)
+            output = transform(current, stage.config)
+            events = _validate_against_schema(output, stage.output_schema, stage.name)
+            if events and strict_schema:
+                raise PipelineRunError(
+                    f"Stage {stage_id} output schema mismatch: {[e.type.value for e in events]}"
+                )
+            results.append(
+                StageResult(
+                    stage_id=stage_id,
+                    ok=True,
+                    input_rows=current.height,
+                    output_rows=output.height,
+                    drift_events=events,
+                    output_df=output,
+                )
+            )
+            if warehouse is not None and persist:
+                await warehouse.write_table(
+                    f"{stage.name}", f"{namespace}:v{pipeline.version}", output
+                )
+            current = output
+        except (TransformationError, PipelineRunError) as exc:
+            results.append(
+                StageResult(
+                    stage_id=stage_id,
+                    ok=False,
+                    input_rows=current.height,
+                    error=str(exc),
+                )
+            )
+            error = str(exc)
+            break
+
+    return RunResult(
+        pipeline_id=pipeline.id, ok=error is None, stages=results,
+        final_df=current if error is None else None, error=error,
+    )
