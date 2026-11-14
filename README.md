@@ -110,3 +110,7 @@ pipelines/        pipeline definitions
 tests/            unit, integration, agent, safety and evaluation tests
 ```
 
+## Tech stack
+
+Python · Polars · Pydantic · SQLAlchemy/SQLite · FastAPI · OpenAI (optional) · pytest · Docker
+
