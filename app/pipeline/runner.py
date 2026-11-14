@@ -22,3 +22,18 @@ from app.pipeline.stages import TransformationError, get_stage_transform
 from app.storage.base import Warehouse
 
 
+class PipelineRunError(Exception):
+    """Raised when a stage fails or a schema boundary is violated."""
+
+
+@dataclass
+class StageResult:
+    stage_id: str
+    ok: bool
+    input_rows: int = 0
+    output_rows: int = 0
+    error: str | None = None
+    drift_events: list = field(default_factory=list)
+    output_df: pl.DataFrame | None = None
+
+
