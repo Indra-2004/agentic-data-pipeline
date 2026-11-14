@@ -66,3 +66,12 @@ class RunRow(Base):
     quality_json = Column(Text, nullable=True)
 
 
+class MetricRow(Base):
+    __tablename__ = "metric_history"
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    table = Column(String, index=True)
+    timestamp = Column(String)
+    name = Column(String)
+    value = Column(Float)
+
+
