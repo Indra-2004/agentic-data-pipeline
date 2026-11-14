@@ -50,3 +50,29 @@ class TestMetricRepository:
         assert hist[0]["null_rate.a"] == pytest.approx(0.5)
 
 
+class TestHealthMonitor:
+    def test_healthy_canary(self):
+        m = HealthMonitor()
+        r = m.evaluate_canary(
+            {"failure_rate": 0.0, "quality_pass": True, "status": "CANARY_PASSED"}
+        )
+        assert r.healthy is True
+
+    def test_unhealthy_on_failure(self):
+        m = HealthMonitor()
+        r = m.evaluate_canary({"failure_rate": 1.0, "quality_pass": True})
+        assert r.healthy is False
+        assert any(c.name == "failure_rate" and not c.passed for c in r.checks)
+
+    def test_unhealthy_on_quality(self):
+        m = HealthMonitor()
+        r = m.evaluate_canary({"failure_rate": 0.0, "quality_pass": False})
+        assert r.healthy is False
+
+    def test_baseline_anomalies(self):
+        m = HealthMonitor()
+        history = [
+            {"timestamp": f"t{i}", "row_count": 100000 + i} for i in range(5)
+        ]
+        anomalies = m.baseline_anomalies(pl.DataFrame({"x": [1, 2, 3]}), history)
+        assert any(a.metric == "row_count" for a in anomalies)
