@@ -88,3 +88,80 @@ def _build_context(registry: PipelineRegistry, store):
     )
 
 
+def create_app() -> FastAPI:
+    @asynccontextmanager
+    async def lifespan(_: FastAPI):
+        AppState.store = store_from_settings(settings)
+        AppState.registry = PipelineRegistry(str(settings.pipeline_dir))
+        AppState.ctx = _build_context(AppState.registry, AppState.store)
+        yield
+
+    app = FastAPI(
+        title="Self-Healing Pipeline Agent",
+        version="0.1.0",
+        description="Observe, diagnose, propose, validate, stage, canary, rollback.",
+        lifespan=lifespan,
+    )
+
+    @app.get("/health")
+    async def health() -> dict[str, str]:
+        return {
+            "status": "ok",
+            "llm_provider": settings.llm_provider.value,
+            "storage_backend": settings.storage_backend.value,
+            "approval_mode": settings.approval_mode.value,
+        }
+
+    @app.get("/pipelines")
+    async def list_pipelines() -> list[dict[str, Any]]:
+        return [
+            {
+                "id": p.id,
+                "name": p.name,
+                "version": p.version,
+                "source": p.source,
+                "stages": [s.id for s in p.stages],
+            }
+            for p in AppState.registry.list()
+        ]
+
+    @app.post("/pipelines/{pipeline_id}/triage", response_model=TriageSummary)
+    async def run_triage(pipeline_id: str, body: TriageRequest | None = None) -> TriageSummary:
+        pipeline = AppState.registry.get(pipeline_id)
+        if pipeline is None:
+            raise HTTPException(status_code=404, detail=f"unknown pipeline {pipeline_id!r}")
+
+        body = body or TriageRequest()
+        source = body.source or pipeline.source
+        try:
+            df = load_source(source, str(settings.fixture_dir))
+        except (FileNotFoundError, ValueError) as exc:
+            raise HTTPException(status_code=400, detail=str(exc)) from exc
+        if body.limit:
+            df = df.head(body.limit)
+
+        llm = create_llm(settings.llm_provider, settings)
+        orch = Orchestrator(
+            ctx=AppState.ctx,
+            llm=llm,
+            config=TriageConfig(
+                max_iterations=settings.max_iterations,
+                max_tool_calls=settings.max_tool_calls,
+                timeout_seconds=settings.execution_timeout_seconds,
+                max_budget_rows=settings.max_budget_rows,
+                approval_mode=settings.approval_mode.value,
+            ),
+        )
+        state = await orch.run(pipeline_id, df)
+        return _to_summary(state)
+
+    @app.get("/runs/{run_id}", response_model=PipelineTriageState)
+    async def get_run(run_id: str) -> PipelineTriageState:
+        state = await AppState.store.metadata.load_state(run_id)
+        if state is None:
+            raise HTTPException(status_code=404, detail=f"unknown run {run_id!r}")
+        return state
+
+    return app
+
+
