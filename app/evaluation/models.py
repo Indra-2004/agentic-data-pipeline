@@ -45,3 +45,44 @@ class Scenario:
     setup: callable | None = None  # (orchestrator, scenario_id) -> None, pre-run hook
 
 
+@dataclass
+class ScenarioResult:
+    scenario: Scenario
+    state: Any = None  # PipelineTriageState
+    duration: float = 0.0
+    tool_calls: int = 0
+    iterations: int = 0
+
+    # booleans derived for scoring
+    detected_drift: bool = False
+    correct_diagnosis: bool = False
+    safe_fix_proposed: bool = False
+    validation_passed: bool = False
+    was_promoted: bool = False
+    rolled_back: bool = False
+    data_loss: bool = False
+    unexpected_mutation: bool = False
+    matched_outcome: bool = False
+    errors: list[str] = field(default_factory=list)
+
+    def to_dict(self) -> dict[str, Any]:
+        return {
+            "scenario_id": self.scenario.id,
+            "name": self.scenario.name,
+            "category": self.scenario.category,
+            "expected_outcome": self.scenario.expected_outcome.value,
+            "matched_outcome": self.matched_outcome,
+            "detected_drift": self.detected_drift,
+            "correct_diagnosis": self.correct_diagnosis,
+            "safe_fix_proposed": self.safe_fix_proposed,
+            "validation_passed": self.validation_passed,
+            "was_promoted": self.was_promoted,
+            "rolled_back": self.rolled_back,
+            "data_loss": self.data_loss,
+            "unexpected_mutation": self.unexpected_mutation,
+            "tool_calls": self.tool_calls,
+            "iterations": self.iterations,
+            "duration_s": round(self.duration, 3),
+            "errors": self.errors,
+            "final_phase": self.state.phase.value if self.state else None,
+        }
