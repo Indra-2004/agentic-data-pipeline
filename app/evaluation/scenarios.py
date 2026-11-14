@@ -189,3 +189,14 @@ def _inject_invalid_numeric(df: pl.DataFrame, seed: int) -> pl.DataFrame:
     return df.with_columns(pl.Series("amount", values).alias("amount"))
 
 
+def _mk_seed_row_count(row_count: int, n: int = 4) -> callable:
+    """Seed prior metric history so anomaly detection has a baseline."""
+
+    async def seed(meta) -> None:
+        for i in range(n):
+            await meta.record_metrics(
+                "orders", f"baseline-{i}",
+                {"row_count": float(row_count + i), "duplicate_rate": 0.001},
+            )
+
+    return seed
