@@ -18,3 +18,21 @@ from app.agent.policies import ActionClass
 ToolHandler = Callable[..., Awaitable[Any]]
 
 
+@dataclass(frozen=True)
+class Tool:
+    name: str
+    action: ActionClass
+    handler: ToolHandler
+    description: str = ""
+
+    def __get__(self, instance: Any, owner: Any) -> "Tool":
+        # Descriptor protocol: when accessed via an instance, bind `handler`
+        # to that instance so the underlying method receives `self`.
+        if instance is None:
+            return self
+        return replace(self, handler=types.MethodType(self.handler, instance))
+
+    async def invoke(self, **kwargs: Any) -> Any:
+        return await self.handler(**kwargs)
+
+
