@@ -314,3 +314,25 @@ pytest --cov=app             # with coverage (fails under 70%)
 
 ---
 
+## ⚙️ Configuration
+
+All settings are read from environment variables with the `SHP_` prefix (see
+[`.env.example`](.env.example)):
+
+| Variable | Default | Purpose |
+|---|---|---|
+| `SHP_LLM_PROVIDER` | `deterministic` | `deterministic` (offline) or `openai` |
+| `OPENAI_API_KEY` / `OPENAI_MODEL` | — / `gpt-4o-mini` | Only used by the OpenAI provider |
+| `SHP_MAX_ITERATIONS` | `12` | Agent cycle budget |
+| `SHP_MAX_TOOL_CALLS` | `40` | Tool-call budget |
+| `SHP_EXECUTION_TIMEOUT_SECONDS` | `300` | Hard execution timeout |
+| `SHP_MAX_BUDGET_ROWS` | `2000000` | Row resource guardrail |
+| `SHP_MAX_BUDGET_BYTES` | `268435456` | Byte resource guardrail |
+| `SHP_APPROVAL_MODE` | `auto` | `auto` / `manual` / `human_in_loop` |
+| `SHP_STORAGE_BACKEND` | `sqlite` | `sqlite` or `memory` |
+| `SHP_DB_PATH` | `./data/pipeline.db` | SQLite metadata + warehouse file |
+| `SHP_PIPELINE_DIR` | `./pipelines` | Pipeline definition directory |
+| `SHP_FIXTURE_DIR` | `./datasets/fixtures` | Fixture data directory |
+
+---
+
