@@ -36,3 +36,7 @@ class Tool:
         return await self.handler(**kwargs)
 
 
+def tool(name: str, action: ActionClass, description: str = "") -> Callable[[ToolHandler], Tool]:
+    def deco(fn: ToolHandler) -> Tool:
+        return Tool(name=name, action=action, handler=fn, description=description)
+    return deco
