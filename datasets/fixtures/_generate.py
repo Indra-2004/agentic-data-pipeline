@@ -22,3 +22,13 @@ CURRENCIES = ["USD", "EUR", "GBP", "JPY"]
 STATUS = ["completed", "pending", "cancelled", "shipped"]
 
 
+def gen_customers(rng: random.Random, n: int = 200) -> pl.DataFrame:
+    return pl.DataFrame(
+        {
+            "customer_id": list(range(1, n + 1)),
+            "tier": [rng.choice(["standard", "gold", "platinum"]) for _ in range(n)],
+            "country": [rng.choice(["US", "DE", "FR", "UK", "JP"]) for _ in range(n)],
+        }
+    )
+
+
