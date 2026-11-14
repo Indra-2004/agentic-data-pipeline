@@ -26,3 +26,12 @@ class HealthCheck:
     message: str | None = None
 
 
+@dataclass
+class HealthReport:
+    healthy: bool
+    checks: list[HealthCheck] = field(default_factory=list)
+
+    def failed_checks(self) -> list[HealthCheck]:
+        return [c for c in self.checks if not c.passed]
+
+
