@@ -37,3 +37,26 @@ def _ctx(pipeline):
     return ToolContext(store=store, pipelines={pipeline.id: pipeline}, lineage=lineage)
 
 
+class TestHealthyFixture:
+    @pytest.mark.asyncio
+    async def test_healthy_data_is_not_mutated(self):
+        pipeline = _orders_pipeline()
+        ctx = _ctx(pipeline)
+        orch = Orchestrator(ctx=ctx, llm=DeterministicLLM(), config=TriageConfig())
+        state = await orch.run(pipeline.id, _healthy_df())
+        # No drift/anomaly -> no destructive action, no deployment.
+        assert state.detected_issues == []
+        assert state.phase == Phase.SAFE_STOP
+        assert state.deployment_status.value == "not_deployed"
+
+    @pytest.mark.asyncio
+    async def test_runner_persists_to_shadow_namespace(self):
+        pipeline = _orders_pipeline()
+        store = BackendStore(MemoryMetadataStore(), MemoryWarehouse())
+        df = _healthy_df()
+        res = await run_pipeline(pipeline, df, store.warehouse, namespace="shadow")
+        assert res.ok is True
+        versions = await store.warehouse.list_versions("daily_revenue")
+        assert versions == ["shadow:v1.0"]
+
+
