@@ -114,3 +114,7 @@ tests/            unit, integration, agent, safety and evaluation tests
 
 Python · Polars · Pydantic · SQLAlchemy/SQLite · FastAPI · OpenAI (optional) · pytest · Docker
 
+## Author
+
+[Indra-2004](https://github.com/Indra-2004)
+
