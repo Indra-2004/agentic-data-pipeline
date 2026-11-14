@@ -163,3 +163,28 @@ warranted. Reports are written to `reports/evaluation.md` and
 
 ---
 
+## Repository structure
+
+```text
+app/
+├── agent/            orchestrator (bounded FSM), policies, diagnosis, planner,
+│                     LLM providers (deterministic + openai), prompts
+├── api/              minimal FastAPI surface
+├── data/             profiler, schema comparison, quality, anomaly, lineage, loader
+├── evaluation/       scenarios, adversarial, runner, metrics, reports
+├── models/           pydantic domain types (schemas, drift, fixes, agent state)
+├── observability/    metric repository + health monitor
+├── pipeline/         typed stages, transformation registry, runner, registry
+├── rollback/         deterministic idempotent version restore
+├── storage/          protocols + SQLite and in-memory backends
+├── tools/            typed, safety-classified tool registry
+├── validation/       shadow validation engine
+└── config.py         env-driven settings (SHP_* prefix)
+
+datasets/fixtures/    reproducible healthy baseline (orders, customers)
+pipelines/            typed pipeline definitions (JSON)
+tests/                unit / integration / agent / safety / evaluation
+```
+
+---
+
