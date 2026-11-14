@@ -60,3 +60,73 @@ class TestHealthyFixture:
         assert versions == ["shadow:v1.0"]
 
 
+class TestShadowValidationConstraints:
+    @pytest.mark.asyncio
+    async def test_mass_data_loss_blocked(self):
+        pipeline = _orders_pipeline()
+        store = BackendStore(MemoryMetadataStore(), MemoryWarehouse())
+        df = _healthy_df()
+        current = await run_pipeline(pipeline, df, store.warehouse, persist=False)
+        # Candidate that drops 90% of rows.
+        cand_df = df.head(df.height // 10)
+        candidate = await run_pipeline(pipeline, cand_df, store.warehouse, persist=False)
+        report = shadow_validate(
+            current, candidate,
+            pipeline_id="orders",
+            expected_schema=pipeline.stages[-1].output_schema,
+            input_row_count=df.height,
+        )
+        assert report.passed is False
+        names = [c.name for c in report.failed]
+        assert any("row_count" in n for n in names)
+
+    @pytest.mark.asyncio
+    async def test_silent_corruption_blocked_by_metric_delta(self):
+        pipeline = _orders_pipeline()
+        store = BackendStore(MemoryMetadataStore(), MemoryWarehouse())
+        df = _healthy_df()
+        current = await run_pipeline(pipeline, df, store.warehouse, persist=False)
+        # Candidate that preserves row count but halves all amounts (corruption).
+        corrupted = df.with_columns((pl.col("amount") * 0.5).alias("amount"))
+        candidate = await run_pipeline(pipeline, corrupted, store.warehouse, persist=False)
+        report = shadow_validate(
+            current, candidate,
+            pipeline_id="orders",
+            expected_schema=pipeline.stages[-1].output_schema,
+            input_row_count=df.height,
+        )
+        assert report.passed is False
+        aggregates = [c.name for c in report.failed if "aggregate" in c.name]
+        assert aggregates
+
+    @pytest.mark.asyncio
+    async def test_constraint_violation_blocked(self):
+        from app.pipeline.runner import RunResult, StageResult
+
+        # Duplicate order_id in a row-preserving output -> uniqueness fails.
+        df = pl.DataFrame(
+            {
+                "order_id": [1, 1, 2],  # duplicate PK
+                "amount": [10.0, 20.0, 30.0],
+                "currency": ["USD", "USD", "USD"],
+                "created_at": ["2026-01-01"] * 3,
+                "status": ["a", "b", "c"],
+                "customer_id": [1, 2, 3],
+            }
+        )
+        result = RunResult(
+            pipeline_id="orders", ok=True,
+            final_df=df,
+            stages=[StageResult(stage_id="x", ok=True)],
+        )
+        report = shadow_validate(
+            current=result,
+            candidate=result,
+            pipeline_id="orders",
+            input_row_count=df.height,
+            constraints={"unique": ["order_id"]},
+        )
+        assert report.passed is False
+        assert any(c.name == "unique.order_id" for c in report.failed)
+
+
