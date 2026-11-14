@@ -81,3 +81,9 @@ class Warehouse(Protocol):
     async def drop_table(self, table: str) -> None: ...
 
 
+class BackendStore(ABC):
+    """Combined convenience wrapper around metadata + warehouse backends."""
+
+    def __init__(self, metadata: MetadataStore, warehouse: Warehouse) -> None:
+        self.metadata = metadata
+        self.warehouse = warehouse
