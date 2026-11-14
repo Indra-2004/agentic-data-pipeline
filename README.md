@@ -17,3 +17,24 @@
 
 ---
 
+## 📑 Table of contents
+
+- [Why this project](#-why-this-project)
+- [Key features](#-key-features)
+- [How it works](#-how-it-works)
+- [Architecture](#-architecture)
+- [Safety model](#-safety-model)
+- [Getting started](#-getting-started)
+- [REST API](#-rest-api)
+- [Evaluation results](#-evaluation-results)
+- [Testing](#-testing)
+- [Configuration](#%EF%B8%8F-configuration)
+- [Project structure](#-project-structure)
+- [Design decisions](#-design-decisions)
+- [Extending the agent](#-extending-the-agent)
+- [Tech stack](#-tech-stack)
+- [Roadmap](#-roadmap)
+- [Author](#-author)
+
+---
+
