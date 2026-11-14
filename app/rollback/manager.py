@@ -16,3 +16,14 @@ from dataclasses import dataclass, field
 from app.storage.base import Warehouse
 
 
+@dataclass
+class RollbackReport:
+    run_id: str
+    rolled_back: bool
+    reason: str | None = None
+    previous_version: str | None = None
+    restored_version: str | None = None
+    failed_metrics: dict = field(default_factory=dict)
+    timestamp: float = field(default_factory=time.time)
+
+
