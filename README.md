@@ -188,3 +188,21 @@ tests/                unit / integration / agent / safety / evaluation
 
 ---
 
+## Configuration
+
+All settings are environment-driven (prefix `SHP_`, see `.env.example`):
+
+| Variable | Default | Purpose |
+|---|---|---|
+| `SHP_LLM_PROVIDER` | `deterministic` | `deterministic` (offline) or `openai` |
+| `OPENAI_API_KEY` / `OPENAI_MODEL` | — | only used by the OpenAI provider |
+| `SHP_MAX_ITERATIONS` | `12` | agent cycle budget |
+| `SHP_MAX_TOOL_CALLS` | `40` | attempt budget |
+| `SHP_EXECUTION_TIMEOUT_SECONDS` | `300` | hard execution timeout |
+| `SHP_MAX_BUDGET_ROWS` | `2000000` | resource guardrail |
+| `SHP_APPROVAL_MODE` | `auto` | `auto` / `manual` / `human_in_loop` |
+| `SHP_STORAGE_BACKEND` | `sqlite` | `sqlite` or `memory` |
+| `SHP_DB_PATH` | `./data/pipeline.db` | SQLite metadata + warehouse file |
+
+---
+
