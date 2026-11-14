@@ -156,3 +156,11 @@ async def run_scenario(scenario: Scenario, env: EvalEnvironment | None = None) -
     return res
 
 
+async def run_all(scenarios: list[Scenario]) -> list[ScenarioResult]:
+    env = build_environment()
+    results: list[ScenarioResult] = []
+    for sc in scenarios:
+        results.append(await run_scenario(sc, env))
+    return results
+
+
