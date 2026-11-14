@@ -136,3 +136,5 @@ class DiagnosisEngine:
         return best
 
 
+def _hid(kind: str) -> str:
+    return f"{kind}:{uuid.uuid4().hex[:6]}"
