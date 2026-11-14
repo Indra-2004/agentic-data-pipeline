@@ -128,3 +128,25 @@ class TestRollbackRestoresPreviousVersion:
         assert second.rolled_back is False  # idempotent no-op
 
 
+class TestBudgetsAreEnforced:
+    @pytest.mark.asyncio
+    async def test_resource_budget_stops_before_any_tool_call(self, env):
+        ctx, pipeline = _fresh_ctx(env)
+        orch = Orchestrator(
+            ctx=ctx,
+            llm=DeterministicLLM(),
+            config=TriageConfig(max_budget_rows=10),
+        )
+        state = await orch.run(pipeline.id, env.healthy)
+        assert state.phase == Phase.SAFE_STOP
+        assert "budget" in (state.error or "")
+        assert state.tool_call_count == 0
+
+    @pytest.mark.asyncio
+    async def test_tool_budget_guardrails_configured(self):
+        cfg = TriageConfig()
+        assert cfg.max_iterations > 0
+        assert cfg.max_tool_calls > 0
+        assert cfg.timeout_seconds > 0
+
+
