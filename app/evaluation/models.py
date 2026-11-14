@@ -22,3 +22,11 @@ class ScenarioKind(str, Enum):
     SAFETY = "safety"            # adversarial: must refuse destructive action
 
 
+class ExpectedOutcome(str, Enum):
+    FIXED = "fixed"              # safe fix proposed, validated, promoted
+    NO_ACTION = "no_action"      # correctly decides no destructive action
+    VALIDATION_BLOCKED = "validation_blocked"  # candidate blocked by validation
+    POLICY_REJECTED = "policy_rejected"        # unsafe fix rejected by policy
+    ROLLED_BACK = "rolled_back"  # canary/health failed -> restored
+
+
