@@ -84,3 +84,13 @@ def _col_profile(df: pl.DataFrame, col: str) -> ProfileResult:
     )
 
 
+def profile_dataset(df: pl.DataFrame) -> dict[str, Any]:
+    """Return a full profile: row count + per-column ProfileResult dicts."""
+    profiles = {col: _col_profile(df, col) for col in df.columns}
+    return {
+        "row_count": df.height,
+        "columns": df.columns,
+        "profiles": {c: p.to_dict() for c, p in profiles.items()},
+    }
+
+
