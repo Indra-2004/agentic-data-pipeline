@@ -51,3 +51,21 @@ class TestProfiler:
         assert row_count(pl.DataFrame({"x": [1, 2, 3, 4]})) == 4
 
 
+class TestSchemaInference:
+    def test_infer_types(self):
+        df = pl.DataFrame(
+            {
+                "id": [1, 2, 3],
+                "amount": [1.5, 2.5, 3.5],
+                "name": ["a", "b", "c"],
+                "ok": [True, False, True],
+            }
+        )
+        sd = infer_schema(df, table="t")
+        assert polars_to_logical(df["id"].dtype) == DataType.INTEGER
+        types = {c.name: c.type for c in sd.columns}
+        assert types["amount"] == DataType.DOUBLE
+        assert types["name"] == DataType.VARCHAR
+        assert types["ok"] == DataType.BOOLEAN
+
+
