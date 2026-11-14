@@ -37,3 +37,14 @@ from app.storage import store_from_settings
 from app.tools.context import make_context
 
 
+class TriageRequest(BaseModel):
+    """Optional overrides for a triage run."""
+
+    source: str | None = Field(
+        default=None, description="Source key; defaults to the pipeline's own source."
+    )
+    limit: int | None = Field(
+        default=None, ge=1, description="Cap the number of ingested rows."
+    )
+
+
