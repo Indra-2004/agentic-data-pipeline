@@ -398,3 +398,18 @@ agentic-data-pipeline/
 
 ---
 
+## 🧰 Tech stack
+
+| Area | Tools |
+|---|---|
+| Language | Python 3.12 |
+| Data processing | Polars, NumPy |
+| Domain models & config | Pydantic v2, pydantic-settings |
+| Storage | SQLAlchemy 2 + SQLite, in-memory backend, Parquet snapshots |
+| API | FastAPI, Uvicorn, orjson |
+| LLM | Deterministic offline provider, OpenAI SDK |
+| Testing | pytest, pytest-asyncio, pytest-cov, httpx |
+| Packaging | setuptools, Docker, Docker Compose |
+
+---
+
