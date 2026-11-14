@@ -38,3 +38,30 @@ def create_store(
     raise ValueError(f"Unknown storage backend: {backend!r}")
 
 
+def store_from_settings(settings: object = None) -> BackendStore:
+    """Create a store from a :class:`app.config.Settings`-compatible object.
+
+    Pass nothing to use the module-level default settings; pass an override to
+    inject a custom backend/path (used in tests).
+    """
+    if settings is None:
+        from app.config import settings as _settings
+
+        settings = _settings
+    return create_store(
+        backend=settings.storage_backend.value,
+        db_path=str(settings.db_path),
+    )
+
+
+__all__ = [
+    "BackendStore",
+    "MetadataStore",
+    "Warehouse",
+    "MemoryMetadataStore",
+    "MemoryWarehouse",
+    "SQLiteMetadataStore",
+    "SQLiteWarehouse",
+    "create_store",
+    "store_from_settings",
+]
