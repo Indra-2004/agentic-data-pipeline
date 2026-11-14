@@ -49,3 +49,31 @@ class TestSafetyClassification:
         assert not p.tool_allowed_in_phase("rollback_pipeline", Phase.OBSERVE)
 
 
+class TestRiskClassification:
+    def test_cast_is_low(self):
+        p = PolicyEngine()
+        assert p.classify_fix(_proposal(RiskLevel.LOW, _cast())) == RiskLevel.LOW
+
+    def test_drop_invalid_is_high(self):
+        p = PolicyEngine()
+        op = FixOperation(operation=FixOperationType.DROP_INVALID_ROWS, column="a")
+        assert p.classify_fix(_proposal(RiskLevel.LOW, op)) == RiskLevel.HIGH
+
+    def test_rename_is_medium(self):
+        p = PolicyEngine()
+        op = FixOperation(operation=FixOperationType.RENAME_COLUMN, column="a", target="b")
+        assert p.classify_fix(_proposal(RiskLevel.LOW, op)) == RiskLevel.MEDIUM
+
+    def test_proposal_validated(self):
+        p = PolicyEngine()
+        # A proposal with an operation outside the enum can't even be built via
+        # the model; validate guards against a missing to_type.
+        with pytest.raises(PolicyError):
+            p.validate_proposal(
+                _proposal(
+                    RiskLevel.LOW,
+                    FixOperation(operation=FixOperationType.CAST_TYPE, column="a"),
+                )
+            )
+
+
