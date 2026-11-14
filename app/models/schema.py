@@ -66,3 +66,11 @@ class DriftEventType(str, Enum):
     NESTED_STRUCTURE_CHANGED = "nested_structure_changed"
 
 
+class DriftEvent(BaseModel):
+    type: DriftEventType
+    column: str
+    expected: str | None = None
+    observed: str | None = None
+    severity: Severity = Severity.LOW
+
+
