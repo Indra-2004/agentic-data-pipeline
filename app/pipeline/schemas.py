@@ -48,3 +48,23 @@ def polars_to_logical(dtype: pl.DataType) -> DataType:
     return _POLAR_TO_LOGICAL.get(name, DataType.UNKNOWN)
 
 
+def logical_to_polars(t: DataType) -> pl.DataType:
+    """Map a logical DataType to its representative Polars dtype."""
+    return _LOGICAL_TO_POLAR.get(t, pl.Unknown)
+
+
+def infer_schema(
+    df: pl.DataFrame, table: str, version: int = 1
+) -> SchemaDefinition:
+    """Infer a SchemaDefinition from a DataFrame's dtypes and nullability."""
+    columns: list[ColumnDefinition] = []
+    for col in df.columns:
+        logical = polars_to_logical(df[col].dtype)
+        columns.append(
+            ColumnDefinition(
+                name=col,
+                type=logical,
+                nullable=df[col].null_count() > 0,
+            )
+        )
+    return SchemaDefinition(table=table, version=version, columns=columns)
