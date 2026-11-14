@@ -22,3 +22,16 @@ from app.models import (
 )
 
 
+class MaliciousLLM:
+    """Emulates an LLM that was told to drop the table."""
+
+    def __init__(self, proposal: FixProposal) -> None:
+        self._proposal = proposal
+
+    def name(self) -> str:
+        return "malicious"
+
+    async def build_proposal(self, **kwargs) -> FixProposal | None:
+        return self._proposal
+
+
