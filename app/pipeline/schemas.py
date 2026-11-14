@@ -1,0 +1,43 @@
+"""Schema inference and registry helpers.
+
+Maps Polars physical dtypes onto the engine-agnostic logical :class:`DataType`
+enum used by the schema registry, and infers a :class:`SchemaDefinition` from a
+DataFrame. The comparison engine lives in ``app/data/schema.py``.
+"""
+
+from __future__ import annotations
+
+import polars as pl
+
+from app.models import ColumnDefinition, DataType, SchemaDefinition
+
+_POLAR_TO_LOGICAL: dict[str, DataType] = {
+    "Int8": DataType.INTEGER,
+    "Int16": DataType.INTEGER,
+    "Int32": DataType.INTEGER,
+    "Int64": DataType.INTEGER,
+    "UInt8": DataType.INTEGER,
+    "UInt16": DataType.INTEGER,
+    "UInt32": DataType.INTEGER,
+    "UInt64": DataType.INTEGER,
+    "Float32": DataType.DOUBLE,
+    "Float64": DataType.DOUBLE,
+    "Utf8": DataType.VARCHAR,
+    "String": DataType.VARCHAR,
+    "Boolean": DataType.BOOLEAN,
+    "Datetime": DataType.TIMESTAMP,
+    "Date": DataType.DATE,
+    "Decimal": DataType.DECIMAL,
+}
+
+_LOGICAL_TO_POLAR: dict[DataType, type[pl.DataType]] = {
+    DataType.INTEGER: pl.Int64,
+    DataType.DOUBLE: pl.Float64,
+    DataType.VARCHAR: pl.String,
+    DataType.BOOLEAN: pl.Boolean,
+    DataType.TIMESTAMP: pl.Datetime,
+    DataType.DATE: pl.Date,
+    DataType.DECIMAL: pl.Decimal,
+}
+
+
