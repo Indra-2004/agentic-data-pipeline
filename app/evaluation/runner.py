@@ -27,3 +27,10 @@ from app.tools.context import make_context
 ROW_DROP_OPS = {FixOperationType.DROP_INVALID_ROWS}
 
 
+@dataclass
+class EvalEnvironment:
+    pipeline_id: str
+    healthy: pl.DataFrame
+    customers: pl.DataFrame
+
+
