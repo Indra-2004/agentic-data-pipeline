@@ -15,3 +15,11 @@ from app.models import (
 from app.models.state import Phase
 
 
+def _proposal(risk: RiskLevel, *ops: FixOperation) -> FixProposal:
+    return FixProposal(root_cause="test", operations=list(ops), risk=risk)
+
+
+def _cast() -> FixOperation:
+    return FixOperation(operation=FixOperationType.CAST_TYPE, column="a", to_type="DOUBLE")
+
+
