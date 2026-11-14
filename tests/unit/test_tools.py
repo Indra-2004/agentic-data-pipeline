@@ -82,3 +82,32 @@ class TestDataTools:
         assert len(out["value_counts"]) > 0
 
 
+class TestPipelineTools:
+    @pytest.mark.asyncio
+    async def test_get_pipeline_and_lineage(self, setup):
+        ctx, pipeline, reg = setup
+        p = await reg.invoke("get_pipeline", Phase.OBSERVE, pipeline_id=pipeline.id)
+        assert p["id"] == pipeline.id
+        lineage = await reg.invoke(
+            "get_lineage", Phase.OBSERVE, changed_columns=["amount"]
+        )
+        assert "daily_revenue" in lineage["blast_radius"]
+        run = await reg.invoke("get_pipeline_run", Phase.OBSERVE, pipeline_id=pipeline.id)
+        assert run["status"] == "no_record"
+        logs = await reg.invoke("get_stage_logs", Phase.OBSERVE, pipeline_id=pipeline.id)
+        assert logs["pipeline_id"] == pipeline.id
+
+    @pytest.mark.asyncio
+    async def test_run_stage_shadow_write_gated(self, setup):
+        _, pipeline, reg = setup
+        with pytest.raises(PolicyError):
+            await reg.invoke(
+                "run_stage", Phase.OBSERVE, pipeline_id=pipeline.id, stage_id="orders_clean"
+            )
+        out = await reg.invoke(
+            "run_stage", Phase.VALIDATE, approval=ApprovalStatus.APPROVED,
+            pipeline_id=pipeline.id, stage_id="orders_clean",
+        )
+        assert out["namespace"] == "shadow"
+
+
