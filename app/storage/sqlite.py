@@ -44,3 +44,9 @@ class AgentStateRow(Base):
     state_json = Column(Text)
 
 
+class PipelineRow(Base):
+    __tablename__ = "pipelines"
+    id = Column(String, primary_key=True)
+    pipeline_json = Column(Text)
+
+
