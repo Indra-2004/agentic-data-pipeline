@@ -26,3 +26,11 @@ out. If anything goes wrong, it rolls back automatically.
 
 If a step fails or a limit is hit, the agent stops without changing anything.
 
+## Safety
+
+- The agent can only use a fixed set of fix operations, never raw SQL or shell commands.
+- Low-risk fixes go ahead automatically. Medium-risk fixes need approval. High-risk fixes (like deleting rows) are rejected.
+- Every fix is tested on a shadow copy before release.
+- Every change is versioned, so rollback is always possible.
+- Instructions hidden inside the data are treated as data, not commands.
+
