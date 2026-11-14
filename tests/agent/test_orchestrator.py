@@ -67,3 +67,29 @@ def _drifted_df(n: int = 100) -> pl.DataFrame:
     )
 
 
+class TestTypeDriftPromotion:
+    @pytest.mark.asyncio
+    async def test_drift_reaches_success(self):
+        ctx = _ctx()
+        orch = Orchestrator(ctx=ctx, llm=DeterministicLLM(), config=TriageConfig(approval_mode="auto"))
+        state = await orch.run("orders", _drifted_df())
+
+        assert state.phase == Phase.SUCCESS
+        assert state.deployment_status == DeploymentStatus.ACTIVE
+        assert any(e.column == "amount" for e in state.detected_issues)
+        assert state.validation_report is not None and state.validation_report.passed
+        assert state.approval_status == ApprovalStatus.AUTO_APPROVED
+        # State is persisted/resumable.
+        assert await ctx.store.metadata.load_state(state.run_id) is not None
+
+    @pytest.mark.asyncio
+    async def test_state_phase_transitions_recorded(self):
+        ctx = _ctx()
+        orch = Orchestrator(ctx=ctx, llm=DeterministicLLM(), config=TriageConfig())
+        state = await orch.run("orders", _drifted_df())
+        assert state.phase == Phase.SUCCESS
+        # Proposed fix cast the drifted type back to DOUBLE.
+        assert state.proposed_fix is not None
+        assert state.proposed_fix.operations[0].operation == FixOperationType.CAST_TYPE
+
+
