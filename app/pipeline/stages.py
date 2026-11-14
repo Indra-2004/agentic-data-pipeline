@@ -88,3 +88,13 @@ def op_rename_column(df: pl.DataFrame, column: str, target: str) -> pl.DataFrame
     raise TransformationError(f"Cannot rename {column} -> {target}: target exists")
 
 
+def op_default_value(
+    df: pl.DataFrame, column: str, value: Any, condition: str | None = None
+) -> pl.DataFrame:
+    new_col = df[column].fill_null(value)
+    # Also replace empty strings for string columns
+    if df[column].dtype in (pl.String, pl.Utf8):
+        new_col = new_col.cast(pl.String).replace("", str(value))
+    return df.with_columns(new_col.alias(column))
+
+
