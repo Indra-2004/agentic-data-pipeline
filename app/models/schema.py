@@ -57,3 +57,12 @@ class SchemaDefinition(BaseModel):
         )
 
 
+class DriftEventType(str, Enum):
+    COLUMN_ADDED = "column_added"
+    COLUMN_REMOVED = "column_removed"
+    TYPE_CHANGED = "type_changed"
+    NULLABLE_CHANGED = "nullable_changed"
+    RENAMED_COLUMN = "renamed_column"
+    NESTED_STRUCTURE_CHANGED = "nested_structure_changed"
+
+
