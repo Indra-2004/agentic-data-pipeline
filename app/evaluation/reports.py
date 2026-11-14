@@ -10,3 +10,12 @@ from app.evaluation.metrics import EvalMetrics, compute_metrics
 from app.evaluation.models import ScenarioResult
 
 
+def build_report_data(
+    results: list[ScenarioResult], metrics: EvalMetrics
+) -> dict[str, Any]:
+    return {
+        "metrics": metrics.to_dict(),
+        "scenarios": [r.to_dict() for r in results],
+    }
+
+
