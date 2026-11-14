@@ -42,3 +42,41 @@ The pipeline expects `amount: DOUBLE` and now receives `VARCHAR`. The agent:
 
 ---
 
+## Architecture
+
+```text
+        Source (CSV fixtures)
+              │
+        Ingestion (load_source)
+              │
+        Raw observed data ─────────────┐
+              │                        │
+   ┌──────────▼──────────┐    ┌────────▼─────────┐
+   │  Pipeline Runner    │    │  Agent Loop       │
+   │  (typed stages)     │◄───┤  bounded FSM      │
+   │  clean → aggregate  │    │  OBSERVE…ROLLBACK │
+   └──────────┬──────────┘    └────────┬─────────┘
+              │                        │ tools (policy-gated)
+       ┌──────▼──────┐          ┌──────▼───────┐
+       │  Warehouse  │          │ Metadata     │
+       │  (versioned)│          │ store        │
+       └─────────────┘          └──────────────┘
+        main / shadow /          state, schema registry,
+        canary namespaces        metric history, rollbacks
+```
+
+The agent loop is an **explicit, bounded state machine**:
+
+```text
+OBSERVE → DETECT → DIAGNOSE → PLAN → PROPOSE → VALIDATE → APPROVAL
+    → STAGE → CANARY → MONITOR → SUCCESS
+                                    │
+                                    └──→ ROLLBACK   (deterministic, idempotent)
+```
+
+Any guardrail breach (iteration budget, tool-call budget, execution timeout,
+resource budget) ends the run in `SAFE_STOP` — the agent prefers doing nothing
+over making an unsafe change.
+
+---
+
