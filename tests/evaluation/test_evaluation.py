@@ -124,3 +124,5 @@ async def test_reports_written(tmp_path):
     assert "type_drift" in text
 
 
+def test_metrics_module_reexports():
+    assert hasattr(metrics_mod, "compute_metrics")
