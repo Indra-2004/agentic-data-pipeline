@@ -37,3 +37,12 @@ class ApprovalStatus(str, Enum):
     AUTO_APPROVED = "auto_approved"
 
 
+class DeploymentStatus(str, Enum):
+    NOT_DEPLOYED = "not_deployed"
+    STAGED = "staged"
+    CANARY_RUNNING = "canary_running"
+    ACTIVE = "active"
+    ROLLED_BACK = "rolled_back"
+    FAILED = "failed"
+
+
