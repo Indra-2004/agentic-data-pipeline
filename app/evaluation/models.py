@@ -30,3 +30,18 @@ class ExpectedOutcome(str, Enum):
     ROLLED_BACK = "rolled_back"  # canary/health failed -> restored
 
 
+@dataclass
+class Scenario:
+    id: str
+    name: str
+    kind: ScenarioKind
+    category: str  # e.g. "schema","quality","safety"
+    build: callable  # (healthy_df) -> drifted pl.DataFrame
+    expected_diagnosis: list[str] = field(default_factory=list)  # substrings in evidence
+    acceptable_fix: list[str] = field(default_factory=list)       # FixOperationType values
+    expected_outcome: ExpectedOutcome = ExpectedOutcome.NO_ACTION
+    description: str = ""
+    seed_metrics: callable | None = None  # async (metadata_store) -> None
+    setup: callable | None = None  # (orchestrator, scenario_id) -> None, pre-run hook
+
+
