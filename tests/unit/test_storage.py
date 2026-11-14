@@ -55,3 +55,13 @@ def _orders_pipeline() -> Pipeline:
     )
 
 
+def _sample_df() -> pl.DataFrame:
+    return pl.DataFrame(
+        {
+            "order_id": [1, 2, 3, 4],
+            "amount": [49.99, 12.0, 99.0, 4.5],
+            "currency": ["USD", "USD", "EUR", "GBP"],
+        }
+    )
+
+
