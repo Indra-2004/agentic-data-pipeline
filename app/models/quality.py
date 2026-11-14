@@ -35,3 +35,13 @@ class QualityReport(BaseModel):
         return all(c.status != "fail" for c in self.checks)
 
 
+class QualityAnomaly(BaseModel):
+    """A deterministic data-quality anomaly surfaced to the agent."""
+
+    metric: str
+    column: str | None = None
+    expected: Any = None
+    observed: Any = None
+    severity: Severity = Severity.MEDIUM
+    threshold: float | None = None
+    context: str | None = None
