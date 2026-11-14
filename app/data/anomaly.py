@@ -24,3 +24,9 @@ SIGMA = 3.0
 MIN_ROWS_FOR_BASELINE = 3
 
 
+def _numeric(history: list[dict[str, Any]], name: str) -> list[float]:
+    return [
+        float(h[name]) for h in history if name in h and h[name] is not None
+    ]
+
+
