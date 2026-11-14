@@ -77,3 +77,29 @@ class TestRiskClassification:
             )
 
 
+class TestApproval:
+    def test_auto_low_approves(self):
+        p = PolicyEngine(approval_mode="auto")
+        ok, _ = p.can_deploy(_proposal(RiskLevel.LOW, _cast()), ApprovalStatus.NOT_REQUIRED)
+        assert ok is True
+
+    def test_auto_high_rejected(self):
+        p = PolicyEngine(approval_mode="auto")
+        ok, _ = p.can_deploy(
+            _proposal(RiskLevel.HIGH, FixOperation(operation=FixOperationType.DROP_INVALID_ROWS, column="a")),
+            ApprovalStatus.NOT_REQUIRED,
+        )
+        assert ok is False
+
+    def test_medium_requires_approval(self):
+        p = PolicyEngine(approval_mode="auto")
+        op = FixOperation(operation=FixOperationType.RENAME_COLUMN, column="a", target="b")
+        ok, _ = p.can_deploy(_proposal(RiskLevel.MEDIUM, op), ApprovalStatus.PENDING)
+        assert ok is False
+        ok2, _ = p.can_deploy(_proposal(RiskLevel.MEDIUM, op), ApprovalStatus.APPROVED)
+        assert ok2 is True
+
+    def test_production_write_gated_by_approval(self):
+        p = PolicyEngine()
+        with pytest.raises(PolicyError):
+            p.assert_action_allowed("run_canary", Phase.CANARY, ApprovalStatus.REJECTED)
