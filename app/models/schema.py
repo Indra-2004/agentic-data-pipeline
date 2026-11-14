@@ -24,3 +24,11 @@ class DataType(str, Enum):
     UNKNOWN = "UNKNOWN"
 
 
+class Severity(str, Enum):
+    INFO = "INFO"
+    LOW = "LOW"
+    MEDIUM = "MEDIUM"
+    HIGH = "HIGH"
+    CRITICAL = "CRITICAL"
+
+
