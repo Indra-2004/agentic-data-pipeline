@@ -129,3 +129,30 @@ def _score(state, scenario: Scenario, env: EvalEnvironment, drifted: pl.DataFram
     return res
 
 
+async def run_scenario(scenario: Scenario, env: EvalEnvironment | None = None) -> ScenarioResult:
+    env = env or build_environment()
+    ctx, pipeline = _fresh_ctx(env)
+
+    # Seed baseline metric history when the scenario relies on anomaly detection.
+    if scenario.seed_metrics is not None:
+        await scenario.seed_metrics(ctx.store.metadata)
+
+    drifted = scenario.build(env.healthy)
+    # For the rollback scenario, seed a healthy prior snapshot too.
+    if scenario.id == "partial_deployment_failure":
+        table = pipeline.stages[0].name
+        await ctx.store.warehouse.write_table(table, "main:v1.0", env.healthy)
+
+    orch = Orchestrator(
+        ctx=ctx, llm=DeterministicLLM(), config=TriageConfig(approval_mode="auto")
+    )
+    if scenario.setup is not None:
+        scenario.setup(orch, scenario.id)
+
+    started = time.perf_counter()
+    state = await orch.run(pipeline.id, drifted)
+    res = _score(state, scenario, env, drifted)
+    res.duration = time.perf_counter() - started
+    return res
+
+
