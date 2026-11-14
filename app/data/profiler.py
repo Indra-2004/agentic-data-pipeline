@@ -94,3 +94,20 @@ def profile_dataset(df: pl.DataFrame) -> dict[str, Any]:
     }
 
 
+def row_count(df: pl.DataFrame) -> int:
+    return df.height
+
+
+def value_counts(df: pl.DataFrame, col: str, top: int = 10) -> list[dict[str, Any]]:
+    """Type/value distribution for a column (for category-drift detection)."""
+    vc = (
+        df[col]
+        .cast(pl.String, strict=False)
+        .drop_nulls()
+        .value_counts(sort=True)
+        .head(top)
+    )
+    return [
+        {"value": row[col], "count": row["count"]}
+        for row in vc.iter_rows(named=True)
+    ]
