@@ -90,3 +90,11 @@ class RollbackRow(Base):
     record_json = Column(Text)
 
 
+class WarehouseVersionRow(Base):
+    __tablename__ = "warehouse_versions"
+    table = Column(String, primary_key=True)
+    version = Column(String, primary_key=True)
+    parquet = Column(LargeBinary)
+    row_count = Column(Integer)
+
+
