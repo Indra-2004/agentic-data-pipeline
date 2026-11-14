@@ -15,3 +15,11 @@ from app.models import Hypothesis, RiskLevel
 from app.models.state import Phase
 
 
+@dataclass
+class PlanStep:
+    tool: str
+    phase: Phase
+    args: dict[str, Any] = field(default_factory=dict)
+    description: str = ""
+
+
