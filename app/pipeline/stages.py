@@ -107,3 +107,15 @@ def op_drop_invalid_rows(
     return df.filter(~expr)
 
 
+def _coerce(value: Any, dtype: pl.DataType) -> Any:
+    """Coerce a python scalar to be dtype-compatible for replace operations."""
+    try:
+        if dtype.is_float():
+            return float(value)
+        if dtype.is_integer():
+            return int(float(value))
+        return str(value)
+    except (TypeError, ValueError):
+        return value
+
+
