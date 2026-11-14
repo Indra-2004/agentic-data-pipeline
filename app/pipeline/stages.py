@@ -98,3 +98,12 @@ def op_default_value(
     return df.with_columns(new_col.alias(column))
 
 
+def op_drop_invalid_rows(
+    df: pl.DataFrame, column: str, invalid_values: list[Any] | None = None
+) -> pl.DataFrame:
+    expr = pl.col(column).is_null()
+    if invalid_values:
+        expr = expr | pl.col(column).is_in(invalid_values)
+    return df.filter(~expr)
+
+
