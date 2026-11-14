@@ -112,3 +112,15 @@ def test_metrics_computation_on_synthetic_results():
     assert d["data_loss_rate"] == 0.5
 
 
+@pytest.mark.asyncio
+async def test_reports_written(tmp_path):
+    from app.evaluation.reports import write_reports
+
+    results = await run_all(benchmark_scenarios()[:2])
+    md_path, json_path = write_reports(results, tmp_path)
+    assert md_path.exists() and json_path.exists()
+    text = md_path.read_text()
+    assert "DATA LOSS RATE" in text
+    assert "type_drift" in text
+
+
