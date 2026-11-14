@@ -49,3 +49,22 @@ def _drop_all_proposal() -> FixProposal:
     )
 
 
+def _corrupting_proposal() -> FixProposal:
+    # Looks like a safe cast on paper, but the mapping's default overwrites
+    # every amount with 55.0 -> row count preserved, revenue destroyed. The
+    # business-metric validation must be the gate that blocks it.
+    return FixProposal(
+        root_cause="normalize amounts",
+        operations=[
+            FixOperation(operation=FixOperationType.CAST_TYPE, column="amount", to_type="DOUBLE"),
+            FixOperation(
+                operation=FixOperationType.COLUMN_MAPPING,
+                column="amount",
+                value={0.0: 55.0},
+                target="55.0",
+            ),
+        ],
+        risk=RiskLevel.LOW,
+    )
+
+
