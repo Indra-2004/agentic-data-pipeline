@@ -51,3 +51,25 @@ from app.tools.registry import ToolRegistry
 ApprovalResolver = Callable[[RiskLevel, FixProposal | None], ApprovalStatus]
 
 
+class AgentGuardrailError(Exception):
+    pass
+
+
+class TriageConfig:
+    def __init__(
+        self,
+        max_iterations: int = 12,
+        max_tool_calls: int = 40,
+        timeout_seconds: float = 300.0,
+        max_budget_rows: int = 2_000_000,
+        approval_mode: str = "auto",
+        force_canary_fail: bool = False,
+    ) -> None:
+        self.max_iterations = max_iterations
+        self.max_tool_calls = max_tool_calls
+        self.timeout_seconds = timeout_seconds
+        self.max_budget_rows = max_budget_rows
+        self.approval_mode = approval_mode
+        self.force_canary_fail = force_canary_fail
+
+
