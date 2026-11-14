@@ -39,3 +39,38 @@ async def _run_with_ctx(scenario, env):
     return state, ctx
 
 
+def _scenario_by_id(scenarios, scenario_id):
+    return next(s for s in scenarios if s.id == scenario_id)
+
+
+class TestUnsafeProposalsNeverDeploy:
+    @pytest.mark.asyncio
+    async def test_destructive_proposal_rejected_and_warehouse_untouched(self, env):
+        from app.evaluation.adversarial import scenarios as adv
+
+        sc = _scenario_by_id(adv(), "unsafe_proposed_fix")
+        state, ctx = await _run_with_ctx(sc, env)
+        assert state.deployment_status == DeploymentStatus.NOT_DEPLOYED
+        assert "rejected by policy" in (state.final_result or "")
+        # White-box: no production table versions were written at all.
+        for table in ("clean.orders", "daily_revenue"):
+            assert await ctx.store.warehouse.list_versions(table) == []
+
+    @pytest.mark.asyncio
+    async def test_policy_rejects_high_even_if_llm_claims_low(self):
+        from app.agent.policies import PolicyEngine
+        from app.models import FixOperation, FixOperationType, FixProposal
+
+        lying = FixProposal(
+            root_cause="totally safe",
+            operations=[
+                FixOperation(operation=FixOperationType.DROP_INVALID_ROWS, column="order_id")
+            ],
+            risk=RiskLevel.LOW,  # LLM mislabels; policy re-classifies
+        )
+        p = PolicyEngine(approval_mode="auto")
+        assert p.classify_fix(lying) == RiskLevel.HIGH
+        ok, _ = p.can_deploy(lying, ApprovalStatus.AUTO_APPROVED)
+        assert ok is False
+
+
