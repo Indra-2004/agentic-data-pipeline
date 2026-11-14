@@ -125,3 +125,14 @@ class TestGuardrails:
         assert state.rollback_status is not None
 
 
+class FakeLLM:
+    def __init__(self, proposal):
+        self._proposal = proposal
+
+    def name(self):
+        return "fake"
+
+    async def build_proposal(self, **kwargs):
+        return self._proposal
+
+
