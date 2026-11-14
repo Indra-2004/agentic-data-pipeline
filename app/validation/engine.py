@@ -27,3 +27,13 @@ from app.pipeline.schemas import infer_schema
 BUSINESS_ALIASES = {"revenue": "amount", "total_revenue": "amount", "total": "amount"}
 
 
+def _add(report: ValidationReport, name: str, ok: bool, **kw) -> None:
+    report.checks.append(
+        ValidationCheck(
+            name=name,
+            status=ValidationStatus.PASSED if ok else ValidationStatus.FAILED,
+            **kw,
+        )
+    )
+
+
