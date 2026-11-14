@@ -137,3 +137,30 @@ def op_column_mapping(
 
 # --- Fix operation dispatch ---
 
+_FIX_HANDLERS: dict[FixOperationType, Callable[..., pl.DataFrame]] = {
+    FixOperationType.CAST_TYPE: op_cast_type,
+    FixOperationType.FILL_NULL: lambda df, column, value, **_: op_fill_null(df, column, value),
+    FixOperationType.DEDUPLICATE: lambda df, **_: op_deduplicate(df),
+    FixOperationType.NORMALIZE_STRING: lambda df, column, lower=False, strip=True, **_: op_normalize_string(df, column, lower=lower, strip=strip),
+    FixOperationType.PARSE_TIMESTAMP: lambda df, column, fmt=None, **_: op_parse_timestamp(df, column, fmt),
+    FixOperationType.RENAME_COLUMN: lambda df, column, target, **_: op_rename_column(df, column, target),
+    FixOperationType.DEFAULT_VALUE: lambda df, column, value, **_: op_default_value(df, column, value),
+    FixOperationType.DROP_INVALID_ROWS: lambda df, column, invalid_values=None, **_: op_drop_invalid_rows(df, column, invalid_values),
+    FixOperationType.COLUMN_MAPPING: lambda df, column, mapping, default=None, **_: op_column_mapping(df, column, mapping, default),
+}
+
+
+def apply_fix_operations(df: pl.DataFrame, ops: list[FixOperation]) -> pl.DataFrame:
+    """Apply a sequence of declarative fix operations in order.
+
+    Raises :class:`TransformationError` on any unsafe/un-applicable operation.
+    Only passes keyword arguments that the specific operation type accepts.
+    """
+    result = df
+    for op in ops:
+        handler = _FIX_HANDLERS[op.operation]
+        kwargs = _build_kwargs(op)
+        result = handler(result, **kwargs)
+    return result
+
+
