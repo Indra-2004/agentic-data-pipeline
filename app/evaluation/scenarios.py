@@ -161,3 +161,13 @@ def scenarios() -> list[Scenario]:
     ]
 
 
+def _inject_nulls(df: pl.DataFrame, col: str, rate: float, seed: int) -> pl.DataFrame:
+    rng = _R(seed)
+    mask = [rng.random() < rate for _ in range(df.height)]
+    values = df[col].to_list()
+    for i, m in enumerate(mask):
+        if m:
+            values[i] = None
+    return df.with_columns(pl.Series(col, values).alias(col))
+
+
