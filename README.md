@@ -93,3 +93,38 @@ over making an unsafe change.
 
 ---
 
+## Quickstart
+
+```bash
+# 1. Install (Python 3.12+)
+pip install -e ".[dev]"
+
+# 2. Generate the demo fixtures
+python datasets/fixtures/_generate.py
+
+# 3. Run the full test suite (unit / integration / agent / safety / evaluation)
+make test
+
+# 4. Run the evaluation: 10 benchmark + 5 adversarial scenarios
+make evals            # or: python -m app.evaluation.runner --scenarios all
+# Exit code is non-zero unless data_loss_rate == 0.
+
+# 5. Serve the API
+make api              # uvicorn app.api.app:app on :8000
+```
+
+### API
+
+```bash
+curl localhost:8000/health
+curl localhost:8000/pipelines
+curl -X POST localhost:8000/pipelines/orders/triage       # healthy source -> no action
+curl localhost:8000/runs/<run_id>                          # full persisted triage state
+```
+
+`POST .../triage` accepts `{"source": "<path-or-fixture-key>", "limit": 1000}`.
+Runs are bounded (sub-second on demo-scale data) and state is persisted for
+later inspection.
+
+---
+
