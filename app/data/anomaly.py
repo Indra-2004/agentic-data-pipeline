@@ -30,3 +30,12 @@ def _numeric(history: list[dict[str, Any]], name: str) -> list[float]:
     ]
 
 
+def _mean_std(values: list[float]) -> tuple[float, float]:
+    if not values:
+        return 0.0, 0.0
+    n = len(values)
+    mean = sum(values) / n
+    var = sum((v - mean) ** 2 for v in values) / n
+    return mean, math.sqrt(var)
+
+
