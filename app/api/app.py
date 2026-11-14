@@ -48,3 +48,16 @@ class TriageRequest(BaseModel):
     )
 
 
+class TriageSummary(BaseModel):
+    run_id: str
+    pipeline_id: str
+    phase: str
+    deployment_status: str
+    final_result: str | None
+    detected_issues: list[dict[str, Any]]
+    quality_anomalies: list[dict[str, Any]]
+    proposed_fix: dict[str, Any] | None
+    canary_metrics: dict[str, Any]
+    error: str | None
+
+
