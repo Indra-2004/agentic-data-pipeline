@@ -50,3 +50,10 @@ class PipelineRow(Base):
     pipeline_json = Column(Text)
 
 
+class SchemaRow(Base):
+    __tablename__ = "schema_registry"
+    table = Column(String, primary_key=True)
+    version = Column(Integer, primary_key=True)
+    schema_json = Column(Text)
+
+
