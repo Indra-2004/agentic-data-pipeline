@@ -248,3 +248,5 @@ def get_stage_transform(name: str) -> Callable[[pl.DataFrame, dict], pl.DataFram
     return _STAGE_TRANSFORMS[name]
 
 
+def list_stage_transforms() -> list[str]:
+    return sorted(_STAGE_TRANSFORMS)
