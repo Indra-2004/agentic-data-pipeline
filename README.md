@@ -78,3 +78,19 @@ scenario.
 
 ---
 
+## ⚙️ How it works
+
+1. **Detect** — drift is found deterministically (schema diff, quality checks,
+   anomaly detection).
+2. **Diagnose** — the agent identifies the root cause and inspects lineage
+   (`amount` → `clean.orders` → `daily_revenue`) to size the blast radius.
+3. **Propose** — the LLM turns evidence into a constrained fix such as
+   `cast_type(amount, DOUBLE)`. Unknown operations are dropped.
+4. **Shadow-validate** — the fix is tested against the input baseline: schema,
+   row preservation, null rates and business metrics (`revenue <- amount`).
+5. **Ask the policy engine** — never itself — whether it may proceed.
+6. **Stage** a new pipeline version and run a **95 / 5 canary**.
+7. **Monitor** health and **roll back** deterministically if anything degrades.
+
+---
+
