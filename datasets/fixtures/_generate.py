@@ -32,3 +32,20 @@ def gen_customers(rng: random.Random, n: int = 200) -> pl.DataFrame:
     )
 
 
+def gen_orders(rng: random.Random, n: int = 600) -> pl.DataFrame:
+    start = datetime(2026, 1, 1, tzinfo=timezone.utc)
+    return pl.DataFrame(
+        {
+            "order_id": list(range(1, n + 1)),
+            "customer_id": [rng.randint(1, 200) for _ in range(n)],
+            "amount": [round(rng.uniform(5, 500), 2) for _ in range(n)],
+            "currency": [rng.choice(CURRENCIES) for _ in range(n)],
+            "created_at": [
+                (start + timedelta(seconds=rng.randint(0, 120 * 86400))).isoformat()
+                for _ in range(n)
+            ],
+            "status": [rng.choice(STATUS) for _ in range(n)],
+        }
+    )
+
+
