@@ -129,3 +129,24 @@ class TestFixProposal:
         assert prop.confidence > 0.9
 
 
+class TestValidationReport:
+    def test_passed_all_green(self):
+        r = ValidationReport(
+            run_id="r1",
+            checks=[
+                ValidationCheck(name="row_count", status=ValidationStatus.PASSED),
+                ValidationCheck(name="schema", status=ValidationStatus.PASSED),
+            ],
+        )
+        assert r.passed is True
+        assert r.failed == []
+
+    def test_failed_detected(self):
+        r = ValidationReport(
+            run_id="r2",
+            checks=[ValidationCheck(name="nulls", status=ValidationStatus.FAILED)],
+        )
+        assert r.passed is False
+        assert len(r.failed) == 1
+
+
