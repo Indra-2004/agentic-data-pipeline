@@ -154,3 +154,40 @@ def run_quality_checks(
     return report, anomalies
 
 
+def _referential_checks(
+    report: QualityReport,
+    anomalies: list[QualityAnomaly],
+    df: pl.DataFrame,
+    referenced: dict[str, pl.DataFrame],
+) -> None:
+    for key, ref_df in referenced.items():
+        if key not in df.columns:
+            continue
+        fk = df[key].drop_nulls()
+        ref = ref_df[key].drop_nulls()
+        ref_set = set(ref.to_list())
+        missing = fk.filter(~fk.is_in(list(ref_set))).len()  # type: ignore[arg-type]
+        rate = missing / len(fk) if len(fk) else 0.0
+        report.checks.append(
+            QualityCheck(
+                name=f"referential.{key}",
+                column=key,
+                metric="referential_integrity",
+                threshold=0.0,
+                observed=rate,
+                status="pass" if missing == 0 else "fail",
+                message=f"{missing} orphan values",
+            )
+        )
+        if missing > 0:
+            anomalies.append(
+                QualityAnomaly(
+                    metric="referential_integrity",
+                    column=key,
+                    observed=missing,
+                    severity=Severity.HIGH,
+                    context="values missing from reference table",
+                )
+            )
+
+
