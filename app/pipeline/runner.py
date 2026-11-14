@@ -52,3 +52,19 @@ class RunResult:
         return self.stages[0] if self.stages else None
 
 
+def _topological_order(pipeline: Pipeline) -> list[str]:
+    """Return stage ids in dependency order (stable)."""
+    ids = [s.id for s in pipeline.stages]
+    deps: dict[str, set[str]] = {s.id: set(s.dependencies) for s in pipeline.stages}
+    order: list[str] = []
+    remaining = set(ids)
+    while remaining:
+        ready = [i for i in remaining if deps[i] <= set(order)]
+        if not ready:
+            raise PipelineRunError("Cyclic or unsatisfiable pipeline dependencies")
+        picked = ready[0]
+        order.append(picked)
+        remaining.discard(picked)
+    return order
+
+
