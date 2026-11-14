@@ -41,3 +41,10 @@ _LOGICAL_TO_POLAR: dict[DataType, type[pl.DataType]] = {
 }
 
 
+def polars_to_logical(dtype: pl.DataType) -> DataType:
+    """Map a Polars dtype to a logical DataType (UNKNOWN if unrecognized)."""
+    base = dtype.base_type() if hasattr(dtype, "base_type") else dtype
+    name = str(base)
+    return _POLAR_TO_LOGICAL.get(name, DataType.UNKNOWN)
+
+
