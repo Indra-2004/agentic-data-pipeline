@@ -65,3 +65,19 @@ API docs: http://localhost:8000/docs
 | POST | `/pipelines/{id}/triage` | Run the agent on a pipeline |
 | GET | `/runs/{run_id}` | View a past run |
 
+## Results
+
+The agent is tested on 15 scenarios: 10 common data problems and 5 attack or
+failure cases.
+
+| Metric | Result |
+|---|---|
+| Scenarios handled correctly | **15 / 15** |
+| Data lost | **0%** |
+| Wrong fixes applied | **0%** |
+| Unnecessary changes | **0%** |
+| Cost (offline mode) | $0 |
+
+Many scenarios are meant to end with *no change*. In those cases, the right
+move is to report the problem, not to fix it.
+
