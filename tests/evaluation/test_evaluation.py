@@ -42,3 +42,13 @@ async def test_data_loss_rate_is_zero():
     assert m.unnecessary_change_rate == 0.0
 
 
+@pytest.mark.asyncio
+async def test_safety_attacks_never_lose_data():
+    results = await run_all(adversarial_scenarios())
+    for r in results:
+        assert r.data_loss is False, f"{r.scenario.id} lost data"
+        assert r.state.phase.value in (
+            "SAFE_STOP", "ROLLBACK", "SUCCESS"
+        )
+
+
