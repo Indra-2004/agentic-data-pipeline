@@ -50,3 +50,37 @@ class ProfileResult:
         }
 
 
+def _col_profile(df: pl.DataFrame, col: str) -> ProfileResult:
+    series = df[col]
+    total = df.height
+    null_count = series.null_count()
+    null_rate = (null_count / total) if total else 0.0
+    distinct_count = series.n_unique()
+
+    try:
+        min_v = series.min()
+        max_v = series.max()
+    except Exception:  # non-orderable types
+        min_v = max_v = None
+
+    mean = std = None
+    if series.dtype.is_numeric():
+        try:
+            mean = float(series.mean())
+            std = float(series.std())
+        except Exception:
+            pass
+
+    return ProfileResult(
+        column=col,
+        dtype=str(series.dtype),
+        null_count=null_count,
+        null_rate=null_rate,
+        distinct_count=distinct_count,
+        min=min_v,
+        max=max_v,
+        mean=mean,
+        std=std,
+    )
+
+
