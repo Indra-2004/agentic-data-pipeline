@@ -179,3 +179,13 @@ def _inject_duplicates(df: pl.DataFrame, rate: float, seed: int) -> pl.DataFrame
     return pl.concat([df, sampled])
 
 
+def _inject_invalid_numeric(df: pl.DataFrame, seed: int) -> pl.DataFrame:
+    rng = _R(seed)
+    tokens = ["unknown", "NaN", "", "N/A"]
+    values = [str(v) for v in df["amount"].to_list()]
+    for i in range(len(values)):
+        if rng.random() < 0.05:
+            values[i] = rng.choice(tokens)
+    return df.with_columns(pl.Series("amount", values).alias("amount"))
+
+
