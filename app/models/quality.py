@@ -21,3 +21,17 @@ class QualityCheck(BaseModel):
     message: str | None = None
 
 
+class QualityReport(BaseModel):
+    pipeline_id: str
+    run_id: str | None = None
+    checks: list[QualityCheck] = Field(default_factory=list)
+
+    @property
+    def failed(self) -> list[QualityCheck]:
+        return [c for c in self.checks if c.status == "fail"]
+
+    @property
+    def passed(self) -> bool:
+        return all(c.status != "fail" for c in self.checks)
+
+
