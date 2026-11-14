@@ -116,3 +116,32 @@ class TestSchemaInference:
         assert out["tier"].to_list() == ["standard", "standard", "gold"]
 
 
+class TestStageOps:
+    def test_cast_drop(self):
+        df = pl.DataFrame({"amount": ["1.0", "2.0", "bad", "3.0"]})
+        out = op_cast_type(df, "amount", "DOUBLE", on_error=OnError.DROP)
+        assert out.height == 3
+        assert out["amount"].dtype.is_float()
+
+    def test_cast_null(self):
+        df = pl.DataFrame({"amount": ["1.0", "bad", "3.0"]})
+        out = op_cast_type(df, "amount", "DOUBLE", on_error=OnError.NULL)
+        assert out.height == 3
+        assert out["amount"].null_count() == 1
+
+    def test_cast_reject_raises(self):
+        df = pl.DataFrame({"amount": ["1.0", "bad"]})
+        with pytest.raises(TransformationError):
+            op_cast_type(df, "amount", "DOUBLE", on_error=OnError.REJECT)
+
+    def test_parse_timestamp(self):
+        df = pl.DataFrame({"ts": ["2024-01-01", "2024-01-02"]})
+        out = op_parse_timestamp(df, "ts")
+        assert out["ts"].dtype in (pl.Datetime, pl.Date)
+
+    def test_known_stage_transforms(self):
+        names = list_stage_transforms()
+        assert "clean_orders" in names
+        assert "aggregate_daily_revenue" in names
+
+
