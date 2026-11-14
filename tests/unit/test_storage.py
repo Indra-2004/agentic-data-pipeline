@@ -38,3 +38,20 @@ def _orders_schema(version: int = 3) -> SchemaDefinition:
     )
 
 
+def _orders_pipeline() -> Pipeline:
+    stage = PipelineStage(
+        id="orders_clean",
+        name="Orders Clean",
+        input_schema=_orders_schema(),
+        output_schema=_orders_schema(version=4),
+        transformation="clean_orders",
+    )
+    return Pipeline(
+        id="orders",
+        name="Orders Pipeline",
+        version="1.0",
+        source="fixtures:orders.csv",
+        stages=[stage],
+    )
+
+
