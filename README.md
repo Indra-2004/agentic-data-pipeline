@@ -118,3 +118,6 @@ Python · Polars · Pydantic · SQLAlchemy/SQLite · FastAPI · OpenAI (optional
 
 [Indra-2004](https://github.com/Indra-2004)
 
+## License
+
+MIT
