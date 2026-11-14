@@ -16,3 +16,37 @@ def _df(rows: int = 100) -> pl.DataFrame:
     )
 
 
+class TestMetricRepository:
+    @pytest.mark.asyncio
+    async def test_snapshot_fields(self):
+        repo = MetricRepository(MemoryMetadataStore())
+        s = repo.snapshot(_df(100))
+        assert s["row_count"] == 100.0
+        assert "duplicate_rate" in s
+        assert s["duplicate_rate"] == pytest.approx(0.0)
+        assert "mean.amount" in s
+        assert "null_rate.amount" in s
+        assert s["null_rate.amount"] == 0.0
+
+    @pytest.mark.asyncio
+    async def test_record_and_history(self):
+        meta = MemoryMetadataStore()
+        repo = MetricRepository(meta)
+        await repo.record("orders", _df(100), at="t1")
+        await repo.record("orders", _df(90), at="t2")
+        await repo.record("other", _df(50), at="t1")
+        hist = await repo.history("orders")
+        assert len(hist) == 2
+        assert hist[0]["row_count"] == 100.0
+        assert hist[1]["row_count"] == 90.0
+
+    @pytest.mark.asyncio
+    async def test_null_rate_detected(self):
+        meta = MemoryMetadataStore()
+        repo = MetricRepository(meta)
+        df = pl.DataFrame({"a": [1.0, None, None, 4.0]})
+        await repo.record("t", df, at="t1")
+        hist = await repo.history("t")
+        assert hist[0]["null_rate.a"] == pytest.approx(0.5)
+
+
