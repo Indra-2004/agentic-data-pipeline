@@ -82,3 +82,9 @@ def op_parse_timestamp(df: pl.DataFrame, column: str, fmt: str | None = None) ->
     return df.with_columns(parsed.alias(column))
 
 
+def op_rename_column(df: pl.DataFrame, column: str, target: str) -> pl.DataFrame:
+    if target not in df.columns:
+        return df.rename({column: target})
+    raise TransformationError(f"Cannot rename {column} -> {target}: target exists")
+
+
