@@ -228,3 +228,17 @@ def _enrich_orders(df: pl.DataFrame, cfg: dict) -> pl.DataFrame:
     return df
 
 
+@register("aggregate_daily_revenue")
+def _aggregate_daily_revenue(df: pl.DataFrame, cfg: dict) -> pl.DataFrame:
+    agg_cols: list[pl.Expr] = []
+    if "currency" in df.columns:
+        agg_cols.append(pl.col("currency").first())
+    if "amount" in df.columns and df["amount"].dtype.is_numeric():
+        agg_cols.append(pl.sum("amount").alias("revenue"))
+    if "created_at" in df.columns:
+        agg_cols.append(pl.min("created_at").alias("earliest_created_at"))
+    if not agg_cols:
+        return df
+    return df.group_by(["order_id"]).agg(agg_cols)
+
+
