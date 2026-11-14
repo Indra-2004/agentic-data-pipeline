@@ -205,3 +205,14 @@ def _build_kwargs(op: FixOperation) -> dict:
 
 # --- Named stage transformations (registry) ---
 
+_STAGE_TRANSFORMS: dict[str, Callable[[pl.DataFrame, dict], pl.DataFrame]] = {}
+
+
+def register(name: str) -> Callable:
+    def deco(fn: Callable[[pl.DataFrame, dict], pl.DataFrame]) -> Callable:
+        _STAGE_TRANSFORMS[name] = fn
+        return fn
+
+    return deco
+
+
