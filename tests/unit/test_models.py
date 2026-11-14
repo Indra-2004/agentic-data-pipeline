@@ -54,3 +54,15 @@ class TestSettings:
         assert s.approval_mode == ApprovalMode.MANUAL
 
 
+class TestSchemaDefinition:
+    def test_column_map_and_names(self):
+        sd = _orders_schema()
+        assert set(sd.column_names()) == {"order_id", "amount", "currency"}
+        assert sd.column_map["amount"].type == DataType.DOUBLE
+
+    def test_add_version(self):
+        sd = _orders_schema(version=4)
+        assert sd.add_version().version == 5
+        assert len(sd.add_version().columns) == 3
+
+
