@@ -241,3 +241,46 @@ class OpenAIProvider(LLMProvider):
             return None
 
 
+def _parse_proposal_json(raw: str | None) -> FixProposal | None:
+    """Parse + sanitize an OpenAI JSON response into a FixProposal."""
+    import json
+
+    if not raw:
+        return None
+    try:
+        data = json.loads(raw)
+    except json.JSONDecodeError:
+        return None
+
+    ops: list[FixOperation] = []
+    for o in data.get("operations", []):
+        try:
+            op = FixOperation(
+                operation=FixOperationType(o.get("operation")),
+                column=o.get("column"),
+                target=o.get("target"),
+                to_type=o.get("to_type"),
+                value=o.get("value"),
+                on_error=OnError(o.get("on_error", "reject")),
+            )
+            ops.append(op)
+        except (ValueError, TypeError):
+            continue
+
+    try:
+        return FixProposal(
+            root_cause=data.get("root_cause", ""),
+            evidence=data.get("evidence", []),
+            operations=ops,
+            affected_stages=data.get("affected_stages", []),
+            affected_columns=data.get("affected_columns", []),
+            expected_impact=data.get("expected_impact"),
+            risk=RiskLevel(data.get("risk", "LOW")),
+            confidence=float(data.get("confidence", 0.0)),
+            validation_plan=data.get("validation_plan", []),
+            rollback_strategy=data.get("rollback_strategy"),
+        )
+    except ValueError:
+        return None
+
+
