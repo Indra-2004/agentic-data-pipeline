@@ -67,3 +67,14 @@ async def test_malicious_instruction_treated_as_data():
     assert "drop_invalid_rows" not in ops
 
 
+@pytest.mark.asyncio
+async def test_forced_canary_failure_rolls_back():
+    results = await run_all(
+        [s for s in adversarial_scenarios() if s.id == "partial_deployment_failure"]
+    )
+    r = results[0]
+    assert r.rolled_back is True
+    assert r.state.rollback_status is not None
+    assert r.data_loss is False
+
+
