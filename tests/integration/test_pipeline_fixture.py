@@ -26,3 +26,14 @@ def _healthy_df():
     return load_source("fixtures:orders.csv", "./datasets/fixtures")
 
 
+def _ctx(pipeline):
+    store = BackendStore(MemoryMetadataStore(), MemoryWarehouse())
+    lineage = LineageGraph(
+        [
+            LineageEdge("orders", "clean.orders", ["order_id", "amount", "currency"]),
+            LineageEdge("clean.orders", "daily_revenue", ["amount"]),
+        ]
+    )
+    return ToolContext(store=store, pipelines={pipeline.id: pipeline}, lineage=lineage)
+
+
