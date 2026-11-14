@@ -61,3 +61,11 @@ class TriageSummary(BaseModel):
     error: str | None
 
 
+class AppState:
+    """Process-wide singletons created during startup."""
+
+    store = None
+    registry: PipelineRegistry | None = None
+    ctx = None
+
+
