@@ -52,3 +52,11 @@ def op_cast_type(
     return df.with_columns(cast.alias(column))
 
 
+def op_fill_null(df: pl.DataFrame, column: str, value: Any) -> pl.DataFrame:
+    return df.with_columns(df[column].fill_null(value).alias(column))
+
+
+def op_deduplicate(df: pl.DataFrame) -> pl.DataFrame:
+    return df.unique()
+
+
