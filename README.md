@@ -116,7 +116,7 @@ Python · Polars · Pydantic · SQLAlchemy/SQLite · FastAPI · OpenAI (optional
 
 ## Author
 
-[Indra-2004](https://github.com/Indra-2004)
+[Indra-2004](https://github.com/Indra-2004) · [Portfolio](https://indra-2004.github.io/jobportfolio/)
 
 ## License
 
